@@ -1,5 +1,6 @@
 package web3jv.wallet;
 
+import org.bouncycastle.jcajce.provider.digest.Keccak;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.math.ec.ECPoint;
@@ -12,7 +13,8 @@ import java.util.Random;
 public class Wallet {
 
     public static void main(String[] args) throws Exception {
-        getAddress(generatePrivateKey());
+        getAddress("fdd8b595a0ba6ba01c04ab62bd1ab0fb6464fe44a3f32ac07ef236298e97e1aa");
+
     }
 
     public static String generatePrivateKey() {
@@ -25,22 +27,28 @@ public class Wallet {
         return privateKey;
     }
 
-    public static void getAddress(String priKey) throws Exception {
+    public static String getAddress(String priKey) throws Exception {
 
         ECNamedCurveParameterSpec params = ECNamedCurveTable.getParameterSpec("secp256k1");
         ECPoint pointQ = params.getG().multiply(new BigInteger(1, new BigInteger(priKey, 16).toByteArray()));
         String publicKey = Hex.toHexString(pointQ.getEncoded(false));
         String key = publicKey.substring(2);
 
-        System.out.println(publicKey);
+        Keccak.Digest256 digest256 = new Keccak.Digest256();
+        digest256.update(new BigInteger(key, 16).toByteArray());
+        byte[] keccakHash = digest256.digest(new BigInteger(key, 16).toByteArray());
+        String address1 = "0x" + Hex.toHexString(keccakHash).substring(24);
 
         MessageDigest digest = MessageDigest.getInstance("SHA-256"); // Keccak
         byte[] hash = digest.digest(new BigInteger(key, 16).toByteArray());
         String keccacked = Hex.toHexString(hash);
-        String address = keccacked.substring(24);
+        String address = "0x" + keccacked.substring(24);
 
+        System.out.println(keccacked);
         System.out.println(address);
+        String and = "9Fab8C7A16B7cBAA1cF2B8568e8D1b3A59AEb827";
 
+        return address1;
     }
 }
 
