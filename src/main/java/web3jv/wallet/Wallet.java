@@ -11,10 +11,8 @@ import java.math.BigInteger;
 import java.util.Random;
 
 public class Wallet {
-    public static void main(String[] args) {
-    }
 
-    public static String generatePrivateKey() {
+    public String generatePrivateKey() {
         Random random = new Random();
         StringBuilder privateKey = new StringBuilder();
         for (int i = 0; i < 64; i++) {
@@ -24,12 +22,16 @@ public class Wallet {
         return privateKey.toString();
     }
 
-    public static String getPublicKey(String priKey) {
+    public String getPublicKey(String priKey) {
         byte[] priByte = (new BigInteger(priKey, 16)).toByteArray(); // ec = 제로패딩 있어야 함
         ECNamedCurveParameterSpec params = ECNamedCurveTable.getParameterSpec("secp256k1");
         ECPoint pointQ = params.getG().multiply(new BigInteger(priByte));
 
         return Hex.toHexString(pointQ.getEncoded(false)).substring(2);
+    }
+    public String getAddress(String pubKey) {
+        String uncut = getKeccack256HexString(pubKey);
+        return "0x" + uncut.substring(uncut.length() - 40);
     }
 
     public static String getKeccack256HexString(String publicKey) {
@@ -44,21 +46,14 @@ public class Wallet {
         return Hex.toHexString(keccak.digest(input));
     }
 
-    public static String getAddress(String pubKey) {
-        String uncut = getKeccack256HexString(pubKey);
-        return "0x" + uncut.substring(uncut.length() - 40);
-    }
-
     public static boolean checkAddressEIP55(String address) {
         String target = address.startsWith("0x") ? address.substring(2) : address;
         String lower = target.toLowerCase();
         char[] checksum = getKeccack256HexString(lower.getBytes()).toCharArray();
         char[] subject = target.toCharArray();
         for (int i = 0; i < target.length(); i++) {
-            if (Character.isUpperCase(subject[i])) {
-                if (checksum[i] < 56) {
-                    return false;
-                }
+            if (Character.isUpperCase(subject[i]) && checksum[i] < 56) {
+                return false;
             }
         }
 
