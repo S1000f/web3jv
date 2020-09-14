@@ -8,9 +8,7 @@ import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 import java.util.Random;
-import java.util.stream.Stream;
 
 public class Wallet {
 
@@ -55,11 +53,10 @@ public class Wallet {
         String lower = target.toLowerCase();
         char[] checksum = getKeccack256HexString(lower).toCharArray();
         System.out.println(getKeccack256HexString(lower));
-
         char[] subject = target.toCharArray();
         for (int i = 0; i < subject.length; i++) {
             if (Character.isUpperCase(subject[i])) {
-                return checksum[i] >= 8 || Character.isLetter(checksum[i]);
+                return checksum[i] >= 56;
             }
         }
 
