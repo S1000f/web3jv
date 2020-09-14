@@ -8,15 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestWallet {
 
-    @Test
-    public void generateAddress() {
-        String privateKey = "fdd8b595a0ba6ba01c04ab62bd1ab0fb6464fe44a3f32ac07ef236298e97e1aa";
-        String address = Wallet.getAddress(Wallet.getPublicKey(privateKey));
-
-        assertEquals("0x9Fab8C7A16B7cBAA1cF2B8568e8D1b3A59AEb827", address);
-    }
-
-    @DisplayName("개인키 입력시 공개키 생성되는지 테스트")
+    @DisplayName("개인키 입력시 공개키가 생성된다")
     @Test
     public void generatePublicKeyFromPrivateKey() {
         String SamplePriKey = "18dd1dcd752466afa3d1fac1424333c6461c3a0f1d6702e9c45bc9254ec74e5f";
@@ -26,11 +18,32 @@ public class TestWallet {
                 "6039b4803b6182d708fb40a16919bddaef84493ef1d4cf", result);
     }
 
+    @DisplayName("개인키 입력시 주소가 생성된다")
     @Test
-    public void addressChecksumEIP55Test() {
-        String addressTest = "0x9fab8c7a16b7cbaa1cf2b8568e8d1b3a59aeb827";
+    public void generateAddress() {
+        String privateKey = "66bf9bc7fe86b73a085d53555ce99add3a013ef0df86b209d4713361a77e6e89";
+        String derived = "0xa11CB28A6066684DB968075101031d3151dC40ED";
+        String expected = derived.toLowerCase();
+        String address = Wallet.getAddress(Wallet.getPublicKey(privateKey));
+
+        assertEquals(expected, address);
+    }
+
+    @DisplayName("주소입력시 EIP55 방식으로 인코딩된다")
+    @Test
+    public void encodeEIP55Test() {
+        String result = Wallet.encodeEIP55("0x001d3f1ef827552ae1114027bd3ecf1f086ba0f9");
+
+        assertEquals("0x001d3F1ef827552Ae1114027BD3ECF1f086bA0F9", result);
+    }
+
+    @DisplayName("주소를 EIP55 체크섬으로 체크한다")
+    @Test
+    public void checkAddressEIP55Test() {
+        String addressTest = "0xa11CB28A6066684DB968075101031d3151dC40ED";
         boolean result = Wallet.checkAddressEIP55(addressTest);
 
+        assertTrue(Wallet.checkAddressEIP55("0x7b74C763119a062A52AEf110e949542f838bB660"));
         assertTrue(result);
     }
 }
