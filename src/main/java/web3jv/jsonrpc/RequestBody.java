@@ -2,13 +2,57 @@ package web3jv.jsonrpc;
 
 import java.util.List;
 
-public interface RequestBody {
-    void setJsonrpc(String jsonrpc);
-    void setMethod(String method);
-    void setParams(List<String> params);
-    void setId(String id);
-    String getJsonrpc();
-    String getMethod();
-    List<String> getParams();
-    String getId();
+public class RequestBody implements RequestInterface {
+
+    private String jsonrpc;
+    private String method;
+    private List<String> params;
+    private String id;
+
+    public RequestBody(String jsonrpc, String method, List<String> params, String id) {
+        this.jsonrpc = jsonrpc;
+        this.method = method;
+        this.params = params;
+        this.id = id;
+    }
+
+    @Override
+    public void setJsonrpc(String jsonrpc) {
+        this.jsonrpc = jsonrpc;
+    }
+
+    @Override
+    public void setMethod(String method) {
+        this.method = method;
+    }
+
+    @Override
+    public void setParams(List<String> params) {
+        this.params = params;
+    }
+
+    @Override
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    @Override
+    public String getJsonrpc() {
+        return jsonrpc;
+    }
+
+    @Override
+    public String getMethod() {
+        return method;
+    }
+
+    @Override
+    public List<String> getParams() {
+        return params;
+    }
+
+    @Override
+    public String getId() {
+        return id;
+    }
 }

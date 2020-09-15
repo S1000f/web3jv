@@ -6,9 +6,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
 
 public class Web3jv {
@@ -27,7 +29,7 @@ public class Web3jv {
         this.endpoint = url;
     }
 
-    public void jsonRpc(RequestBody rawBody) throws IOException {
+    public <T extends RequestInterface> ResponseInterface jsonRpc(T rawBody) throws IOException {
         URL url = new URL(endpoint);
         HttpURLConnection conn = (HttpURLConnection)url.openConnection();
         conn.setRequestMethod("POST");
@@ -47,17 +49,30 @@ public class Web3jv {
             while ((responseLine = br.readLine()) != null) {
                 response.append(responseLine.trim());
             }
-            System.out.println(response.toString());
+
+            return mapper.readValue(response.toString(), ResponseBody.class);
         }
     }
 
-    public void getClientVersion() throws IOException {
-        jsonRpc(new RawBody(
+    public ResponseInterface getClientVersion() throws IOException {
+        return jsonRpc(new RequestBody(
                 "2.0",
                 "web3_clientVersion",
                 Collections.emptyList(),
                 "1"
         ));
+    }
+
+    public BigInteger getBalance(String address) throws IOException {
+
+        String result = jsonRpc(new RequestBody(
+                "2.0",
+                "eth_getBalance",
+                Arrays.asList(address, "latest"),
+                "1"
+        )).getResult();
+
+        return new BigInteger(result.substring(2), 16);
     }
 
 }
