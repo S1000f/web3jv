@@ -72,8 +72,4 @@ public class TestUtils {
         assertEquals("545109094.442210255", result);
         assertEquals("35666000000000", result2);
     }
-
-
-
-
 }

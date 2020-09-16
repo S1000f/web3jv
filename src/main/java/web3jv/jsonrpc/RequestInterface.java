@@ -5,10 +5,10 @@ import java.util.List;
 public interface RequestInterface {
     void setJsonrpc(String jsonrpc);
     void setMethod(String method);
-    void setParams(List<String> params);
+    void setParams(List<Object> params);
     void setId(String id);
     String getJsonrpc();
     String getMethod();
-    List<String> getParams();
+    List<Object> getParams();
     String getId();
 }

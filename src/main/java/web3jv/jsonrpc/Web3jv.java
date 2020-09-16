@@ -1,11 +1,13 @@
 package web3jv.jsonrpc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import web3jv.jsonrpc.transaction.Transaction;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -25,11 +27,63 @@ public class Web3jv {
         this.endpoint = endpoint;
     }
 
+    public String getEndpoint() {
+        return endpoint;
+    }
+
     public void setEndpoint(String url) {
         this.endpoint = url;
     }
 
-    public <T extends RequestInterface> ResponseInterface jsonRpc(T rawBody) throws IOException {
+    public String web3ClientVersion() throws IOException {
+        return templateEmptyParams("web3_clientVersion");
+    }
+
+    public BigInteger ethBlockNumber() throws IOException {
+        String result = templateEmptyParams("eth_blockNumber");
+        return new BigInteger(result.substring(2), 16);
+    }
+
+    public BigDecimal ethGetBalance(String address) throws IOException {
+        String result = jsonRpc(new RequestBody(
+                "2.0",
+                "eth_getBalance",
+                Arrays.asList(address, "latest"),
+                "1"
+        )).getResult();
+        BigInteger bigInteger = new BigInteger(result.substring(2), 16);
+
+        return new BigDecimal(bigInteger);
+    }
+
+    public BigInteger ethGetTransactionCount(String address) throws IOException {
+        String result = jsonRpc(new RequestBody(
+                "2.0",
+                "eth_getTransactionCount",
+                Arrays.asList(address, "latest"),
+                "1"
+        )).getResult();
+
+        return new BigInteger(result.substring(2), 16);
+    }
+
+    public BigInteger ethGasPrice() throws IOException {
+        String result = templateEmptyParams("eth_gasPrice");
+        return new BigInteger(result.substring(2), 16);
+    }
+
+    public BigInteger ethEstimateGas(String addressTo) throws IOException {
+        String result = jsonRpc(new RequestBody(
+                "2.0",
+                "eth_estimateGas",
+                Collections.singletonList(new Transaction(addressTo)),
+                "1"
+        )).getResult();
+
+        return new BigInteger(result.substring(2), 16);
+    }
+
+    private <T extends RequestInterface> ResponseInterface jsonRpc(T rawBody) throws IOException {
         URL url = new URL(endpoint);
         HttpURLConnection conn = (HttpURLConnection)url.openConnection();
         conn.setRequestMethod("POST");
@@ -54,25 +108,13 @@ public class Web3jv {
         }
     }
 
-    public ResponseInterface getClientVersion() throws IOException {
+    private String templateEmptyParams(String method) throws IOException {
         return jsonRpc(new RequestBody(
                 "2.0",
-                "web3_clientVersion",
+                method,
                 Collections.emptyList(),
                 "1"
-        ));
-    }
-
-    public BigInteger getBalance(String address) throws IOException {
-
-        String result = jsonRpc(new RequestBody(
-                "2.0",
-                "eth_getBalance",
-                Arrays.asList(address, "latest"),
-                "1"
         )).getResult();
-
-        return new BigInteger(result.substring(2), 16);
     }
 
 }

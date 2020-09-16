@@ -29,6 +29,7 @@ public class Wallet {
 
         return Hex.toHexString(pointQ.getEncoded(false)).substring(2);
     }
+
     public String getAddress(String pubKey) {
         String uncut = getKeccack256HexString(pubKey);
         return "0x" + uncut.substring(uncut.length() - 40);
@@ -74,6 +75,5 @@ public class Wallet {
 
         return "0x" + String.valueOf(subject);
     }
-
 
 }

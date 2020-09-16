@@ -11,6 +11,12 @@
     <dependencies>
 
         <dependency>
+            <groupId>net.consensys.cava</groupId>
+            <artifactId>cava-rlp</artifactId>
+            <version>0.5.0</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk15on</artifactId>
             <version>1.65</version>

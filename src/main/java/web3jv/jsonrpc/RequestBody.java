@@ -6,10 +6,10 @@ public class RequestBody implements RequestInterface {
 
     private String jsonrpc;
     private String method;
-    private List<String> params;
+    private List<Object> params;
     private String id;
 
-    public RequestBody(String jsonrpc, String method, List<String> params, String id) {
+    public RequestBody(String jsonrpc, String method, List<Object> params, String id) {
         this.jsonrpc = jsonrpc;
         this.method = method;
         this.params = params;
@@ -27,7 +27,7 @@ public class RequestBody implements RequestInterface {
     }
 
     @Override
-    public void setParams(List<String> params) {
+    public void setParams(List<Object> params) {
         this.params = params;
     }
 
@@ -47,7 +47,7 @@ public class RequestBody implements RequestInterface {
     }
 
     @Override
-    public List<String> getParams() {
+    public List<Object> getParams() {
         return params;
     }
 
