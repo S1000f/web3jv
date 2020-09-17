@@ -1,6 +1,9 @@
 package web3jv.utils;
 
+import org.bouncycastle.util.encoders.Hex;
+
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.RoundingMode;
 
 public class Utils {
@@ -17,15 +20,29 @@ public class Utils {
         return fromWei(converted, targetUnit);
     }
 
-    public static String toWei(BigDecimal amount, EtherUnit originUnit) {
+    public static BigDecimal toWeiBigDecimal(BigDecimal amount, EtherUnit originUnit) {
         BigDecimal position = new BigDecimal("10").pow(originUnit.getWeiValue());
         amount = amount.multiply(position).stripTrailingZeros();
 
-        return amount.toPlainString();
+        return amount;
     }
 
-    public static String toWei(String amount, EtherUnit originUnit) {
+    public static BigDecimal toWeiBigDecimal(String amount, EtherUnit originUnit) {
         BigDecimal converted = new BigDecimal(amount);
-        return toWei(converted, originUnit);
+        return toWeiBigDecimal(converted, originUnit);
+    }
+
+    public static String toWeiString(BigDecimal amount, EtherUnit originUnit) {
+        BigDecimal result = toWeiBigDecimal(amount, originUnit);
+        return result.toPlainString();
+    }
+
+    public static String toWeiString(String amount, EtherUnit originUnit) {
+        BigDecimal converted = new BigDecimal(amount);
+        return toWeiString(converted, originUnit);
+    }
+
+    public static String toHexString(String decimal) {
+        return Hex.toHexString(new BigInteger(decimal, 16).toByteArray());
     }
 }

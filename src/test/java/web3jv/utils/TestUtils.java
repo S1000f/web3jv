@@ -51,11 +51,11 @@ public class TestUtils {
     @DisplayName("Ether단위가 wei단위로 변환된다")
     @Test
     public void toWeiFromEtherTest() {
-        String result = Utils.toWei("0.545109094442210255", EtherUnit.ETHER);
-        String result2 = Utils.toWei("0.005451090944422102", EtherUnit.ETHER);
-        String result3 = Utils.toWei("50.010909444221025577", EtherUnit.ETHER);
-        String result4 = Utils.toWei("52.01090", EtherUnit.ETHER);
-        String result5 = Utils.toWei("24", EtherUnit.ETHER);
+        String result = Utils.toWeiString("0.545109094442210255", EtherUnit.ETHER);
+        String result2 = Utils.toWeiString("0.005451090944422102", EtherUnit.ETHER);
+        String result3 = Utils.toWeiString("50.010909444221025577", EtherUnit.ETHER);
+        String result4 = Utils.toWeiString("52.01090", EtherUnit.ETHER);
+        String result5 = Utils.toWeiString("24", EtherUnit.ETHER);
 
         assertEquals("545109094442210255", result);
         assertEquals("5451090944422102", result2);
@@ -66,8 +66,8 @@ public class TestUtils {
 
     @Test
     public void toWeiFromMicroetherTest() {
-        String result = Utils.toWei("0.545109094442210255", EtherUnit.GWEI);
-        String result2 = Utils.toWei("35666", EtherUnit.GWEI);
+        String result = Utils.toWeiString("0.545109094442210255", EtherUnit.GWEI);
+        String result2 = Utils.toWeiString("35666", EtherUnit.GWEI);
 
         assertEquals("545109094.442210255", result);
         assertEquals("35666000000000", result2);

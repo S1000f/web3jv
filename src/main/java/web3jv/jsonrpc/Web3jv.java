@@ -19,12 +19,14 @@ public class Web3jv {
 
     private final ObjectMapper mapper = new ObjectMapper();
     private String endpoint;
+    private String netVersion;
 
     public Web3jv() {
     }
 
     public Web3jv(String endpoint) {
         this.endpoint = endpoint;
+        this.netVersion = netVersion();
     }
 
     public String getEndpoint() {
@@ -33,6 +35,20 @@ public class Web3jv {
 
     public void setEndpoint(String url) {
         this.endpoint = url;
+        this.netVersion = netVersion();
+    }
+
+    public String getNetVersion() {
+        return netVersion;
+    }
+
+    public String netVersion() {
+        try {
+            return templateEmptyParams("net_version");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public String web3ClientVersion() throws IOException {
@@ -81,6 +97,15 @@ public class Web3jv {
         )).getResult();
 
         return new BigInteger(result.substring(2), 16);
+    }
+
+    public String ethSendRawTransaction(String signedHexString) throws IOException {
+        return jsonRpc(new RequestBody(
+                "2.0",
+                "eth_sendRawTransaction",
+                Collections.singletonList(signedHexString),
+                "1"
+        )).getResult();
     }
 
     private <T extends RequestInterface> ResponseInterface jsonRpc(T rawBody) throws IOException {

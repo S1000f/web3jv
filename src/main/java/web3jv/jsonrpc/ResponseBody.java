@@ -5,6 +5,15 @@ public class ResponseBody implements ResponseInterface {
     private int id;
     private String jsonrpc;
     private String result;
+    private String error;
+
+    public String getError() {
+        return error;
+    }
+
+    public void setError(String error) {
+        this.error = error;
+    }
 
     @Override
     public int getId() {

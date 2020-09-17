@@ -1,14 +1,14 @@
 package web3jv.wallet;
 
-import org.bouncycastle.jcajce.provider.digest.Keccak;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigInteger;
 import java.util.Random;
+
+import static web3jv.crypto.Crypto.getKeccack256HexString;
 
 public class Wallet {
 
@@ -33,18 +33,6 @@ public class Wallet {
     public String getAddress(String pubKey) {
         String uncut = getKeccack256HexString(pubKey);
         return "0x" + uncut.substring(uncut.length() - 40);
-    }
-
-    public static String getKeccack256HexString(String publicKey) {
-        Keccak.DigestKeccak keccak = new Keccak.Digest256();
-        byte[] bytes = ByteUtils.fromHexString(publicKey); // keccak = 제로패딩 없어야 함
-
-        return Hex.toHexString(keccak.digest(bytes));
-    }
-
-    public static String getKeccack256HexString(byte[] input) {
-        Keccak.DigestKeccak keccak = new Keccak.Digest256();
-        return Hex.toHexString(keccak.digest(input));
     }
 
     public static boolean checkAddressEIP55(String address) {
