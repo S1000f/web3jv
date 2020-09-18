@@ -7,16 +7,10 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.encoders.Hex;
 import web3jv.crypto.CryptoUtils;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.math.BigInteger;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.UUID;
@@ -55,6 +49,10 @@ public class Wallet {
         return "0x" + uncut.substring(uncut.length() - 40);
     }
 
+    public String getAddressFromPrivateKey(String privateKey) {
+        return getAddress(getPublicKey(privateKey));
+    }
+
     public static boolean checkAddressEIP55(String address) {
         String target = address.startsWith("0x") ? address.substring(2) : address;
         String lower = target.toLowerCase();
@@ -86,21 +84,23 @@ public class Wallet {
 
     public WalletFile generateWalletFile(String password, String privateKey) {
 
+        /* Derived Key(파생 키)
+        * 비밀번호를 솔트와 n, p, r 을 이용하여 Scrypt 방법으로 암호화 하여 파생키를 생성함
+        * salt : 암호를 강화하기 위한 무작위의 난수집합
+        * n :
+        * r :
+        * p :
+        * DERIVED_KEY_LENGTH :
+        * */
         byte[] salt = generateRandomBytes(32);
         int n = n_4096;
         int p = P;
-        byte[] iv = generateRandomBytes(16);
-
-        /* Derived Key
-        * 비밀번호는 솔트와 n, p, r 을 이용하여 Scrypt 방법으로 암호화
-        * salt : 암호를 강화하기 위한 무작위의 난수집합
-        * n :
-        * */
         byte[] derivedKey = SCrypt.generate(password.getBytes(), salt, n, R, p, DERIVED_KEY_LENGTH);
 
         /* CipherText
-        * 개인키를 iv와 aes_ctr_encrypt 함수를 사용하여 암호화
+        * 개인키를 iv 와 aes_ctr_encrypt 함수를 사용하여 암호화
         * */
+        byte[] iv = generateRandomBytes(16);
         byte[] cipherText = new byte[0];
         try {
             IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
@@ -110,15 +110,14 @@ public class Wallet {
                     new SecretKeySpec(Arrays.copyOfRange(derivedKey, 0, 16), "AES");
             cipher.init(1, secretKeySpec, ivParameterSpec);
             cipherText = cipher.doFinal(new BigInteger(privateKey, 16).toByteArray());
-        } catch (NoSuchPaddingException
-                | NoSuchAlgorithmException
-                | InvalidAlgorithmParameterException
-                | InvalidKeyException
-                | BadPaddingException
-                | IllegalBlockSizeException e) {
+        } catch (Exception e) {
             e.getStackTrace();
         }
 
+        /* mac(Message authentication code)
+        * 암호화된 대상(메시지)이 유효한지 확인하고 복호화 할때 필요함
+        * derivedkey 와 cipherText 를 사용하여 생성
+        * */
         byte[] result = new byte[16 + cipherText.length];
         System.arraycopy(derivedKey, 16, result, 0, 16);
         System.arraycopy(cipherText, 0, result, 16, cipherText.length);

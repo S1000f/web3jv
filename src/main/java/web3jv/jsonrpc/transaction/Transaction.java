@@ -1,6 +1,5 @@
 package web3jv.jsonrpc.transaction;
 
-import net.consensys.cava.rlp.RLP;
 import org.bouncycastle.asn1.x9.X9IntegerConverter;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.params.ECDomainParameters;
@@ -13,7 +12,6 @@ import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.custom.sec.SecP256K1Curve;
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.encoders.Hex;
 import web3jv.jsonrpc.Web3jvProvider;
 import web3jv.wallet.Wallet;
@@ -66,21 +64,7 @@ public class Transaction {
         this.from = from;
     }
 
-    public byte[] encodeRlp() {
-        return RLP.encodeList(writer -> {
-            writer.writeBigInteger(this.nonce);
-            writer.writeBigInteger(this.gasPrice);
-            writer.writeBigInteger(this.gasLimit);
-            writer.writeByteArray(ByteUtils.fromHexString(this.to));
-            writer.writeBigInteger(this.value);
-            writer.writeByteArray(ByteUtils.fromHexString(this.data));
-            writer.writeByteArray(ByteUtils.fromHexString(this.v));
-            writer.writeByteArray(ByteUtils.fromHexString(this.r));
-            writer.writeByteArray(ByteUtils.fromHexString(this.s));
-        }).toArray();
-    }
-
-    public String signRawTransaction(Web3jvProvider web3jv, String privateKey) {
+    public String signRawTransaction(Web3jvProvider web3jv, String privateKey, EncoderProvider encoder) {
         ECNamedCurveParameterSpec params = ECNamedCurveTable.getParameterSpec("secp256k1");
         ECDomainParameters domain = new ECDomainParameters(params.getCurve(), params.getG(), params.getN());
         ECPrivateKeyParameters priKey =
@@ -89,7 +73,17 @@ public class Transaction {
         ECDSASigner signer = new ECDSASigner(new HMacDSAKCalculator(new SHA256Digest()));
         signer.init(true, priKey);
 
-        byte[] messageHash = new Keccak.Digest256().digest(encodeRlp());
+        encoder.setNonce(this.nonce);
+        encoder.setGasPrice(this.gasPrice);
+        encoder.setGasLimit(this.gasLimit);
+        encoder.setTo(this.to);
+        encoder.setValue(this.value);
+        encoder.setData(this.data);
+        encoder.setV(this.v);
+        encoder.setR(this.r);
+        encoder.setS(this.s);
+
+        byte[] messageHash = new Keccak.Digest256().digest(encoder.encode());
         BigInteger[] sigs = signer.generateSignature(messageHash);
         BigInteger r = sigs[0], s = sigs[1];
 
@@ -112,7 +106,11 @@ public class Transaction {
         this.r = rBytes.length == 32 ? Hex.toHexString(rBytes) : Hex.toHexString(rBytes).substring(2);
         this.s = Hex.toHexString(s.toByteArray());
 
-        return "0x" + Hex.toHexString(encodeRlp());
+        encoder.setV(this.v);
+        encoder.setR(this.r);
+        encoder.setS(this.s);
+
+        return "0x" + Hex.toHexString(encoder.encode());
     }
 
     private BigInteger recoverFromSignature(

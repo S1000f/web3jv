@@ -16,12 +16,13 @@ public class TestTransaction {
 
     private Web3jvProvider web3jv;
     private String samplePriKey;
+    private EncoderProvider encoderProvider;
 
     @BeforeEach
     public void setUp() {
         web3jv = new StubWeb3jv();
         web3jv.setChainId(ChainId.ROPSTEN);
-
+        encoderProvider = new RlpEncoder();
     }
 
     @DisplayName("ECDSA로 트랜젝션 암호화 후 r, s값을 얻는다")
@@ -40,7 +41,7 @@ public class TestTransaction {
                 .s("")
                 .build();
 
-        transaction.signRawTransaction(web3jv, samplePriKey);
+        transaction.signRawTransaction(web3jv, samplePriKey, encoderProvider);
         String r = transaction.getR();
         String s = transaction.getS();
 
@@ -64,7 +65,7 @@ public class TestTransaction {
                 .s("")
                 .build();
 
-        String rawTx = transaction.signRawTransaction(web3jv, samplePriKey);
+        String rawTx = transaction.signRawTransaction(web3jv, samplePriKey, encoderProvider);
 
         assertEquals("0xf86a0184ee6b280082520894a11cb28a6066684db968075101031d3151dc40ed872386f" +
                 "26fc10000802aa0efe1183eadf2c3ee097e80d7e2e51a32f2072cdc34bc1567b43120b6834e5112a05" +
