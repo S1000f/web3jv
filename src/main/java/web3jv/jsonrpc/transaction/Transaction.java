@@ -2,28 +2,20 @@ package web3jv.jsonrpc.transaction;
 
 import net.consensys.cava.rlp.RLP;
 import org.bouncycastle.asn1.x9.X9IntegerConverter;
-import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
-import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.signers.ECDSASigner;
-import org.bouncycastle.crypto.signers.GenericSigner;
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
-import org.bouncycastle.crypto.signers.RSADigestSigner;
 import org.bouncycastle.jcajce.provider.digest.Keccak;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.custom.sec.SecP256K1Curve;
-import org.bouncycastle.pqc.crypto.DigestingMessageSigner;
-import org.bouncycastle.pqc.crypto.MessageSigner;
-import org.bouncycastle.pqc.jcajce.provider.util.AsymmetricBlockCipher;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.encoders.Hex;
-import web3jv.jsonrpc.Web3jv;
+import web3jv.jsonrpc.Web3jvProvider;
 import web3jv.wallet.Wallet;
 
 import java.math.BigInteger;
@@ -88,23 +80,18 @@ public class Transaction {
         }).toArray();
     }
 
-    public String buildRawTransaction(Web3jv web3jv, String privateKey) {
-
-        ECDSASigner signer = new ECDSASigner(new HMacDSAKCalculator(new SHA256Digest()));
+    public String signRawTransaction(Web3jvProvider web3jv, String privateKey) {
         ECNamedCurveParameterSpec params = ECNamedCurveTable.getParameterSpec("secp256k1");
         ECDomainParameters domain = new ECDomainParameters(params.getCurve(), params.getG(), params.getN());
         ECPrivateKeyParameters priKey =
                 new ECPrivateKeyParameters(new BigInteger(privateKey, 16), domain);
 
+        ECDSASigner signer = new ECDSASigner(new HMacDSAKCalculator(new SHA256Digest()));
         signer.init(true, priKey);
 
         byte[] messageHash = new Keccak.Digest256().digest(encodeRlp());
-
         BigInteger[] sigs = signer.generateSignature(messageHash);
         BigInteger r = sigs[0], s = sigs[1];
-
-        System.out.println("r: " + Hex.toHexString(r.toByteArray()));
-        System.out.println(Hex.toHexString(r.toByteArray()).length());
 
         BigInteger otherS = params.getN().subtract(s);
         if (s.compareTo(otherS) > 0) {
@@ -119,17 +106,22 @@ public class Transaction {
                 break;
             }
         }
-        System.out.println(new Wallet().getPublicKey(privateKey));
-        System.out.println("recId="+recId);
 
-        this.v = Integer.toHexString(recId + (Integer.parseInt(web3jv.getNetVersion()) * 2) + 35);
-        this.r = r.toByteArray().length == 32 ? Hex.toHexString(r.toByteArray()) : Hex.toHexString(r.toByteArray()).substring(2);
+        this.v = Integer.toHexString(recId + (Integer.parseInt(web3jv.getChainId()) * 2) + 35);
+        byte[] rBytes = r.toByteArray();
+        this.r = rBytes.length == 32 ? Hex.toHexString(rBytes) : Hex.toHexString(rBytes).substring(2);
         this.s = Hex.toHexString(s.toByteArray());
 
         return "0x" + Hex.toHexString(encodeRlp());
     }
 
-    private BigInteger recoverFromSignature(ECDomainParameters domain, byte[] messageHash, BigInteger r, BigInteger s, int recId) {
+    private BigInteger recoverFromSignature(
+            ECDomainParameters domain,
+            byte[] messageHash,
+            BigInteger r,
+            BigInteger s,
+            int recId
+    ) {
         BigInteger n = domain.getN();
         BigInteger i = BigInteger.valueOf((long) recId / 2);
         BigInteger x = r.add(i.multiply(n));
@@ -160,8 +152,6 @@ public class Transaction {
         return new BigInteger(1, Arrays.copyOfRange(qBytes, 1, qBytes.length));
     }
 
-
-
     /**
      * builder
      */
@@ -188,8 +178,8 @@ public class Transaction {
             return this;
         }
 
-        public Builder to(String hexString) {
-            build.to = hexString;
+        public Builder to(String hexStringNo0x) {
+            build.to = hexStringNo0x;
             return this;
         }
 
@@ -198,33 +188,33 @@ public class Transaction {
             return this;
         }
 
-        public Builder data(String hexString) {
-            build.data = hexString;
+        public Builder data(String hexStringNo0x) {
+            build.data = hexStringNo0x;
             return this;
         }
 
-        public Builder v(String hexString) {
-            build.v = hexString;
+        public Builder v(String hexStringNo0x) {
+            build.v = hexStringNo0x;
             return this;
         }
 
-        public Builder r(String hexString) {
-            build.r = hexString;
+        public Builder r(String hexStringNo0x) {
+            build.r = hexStringNo0x;
             return this;
         }
 
-        public Builder s(String hexString) {
-            build.s = hexString;
+        public Builder s(String hexStringNo0x) {
+            build.s = hexStringNo0x;
             return this;
         }
 
-        public Builder chainId(String hexString) {
-            build.chainId = hexString;
+        public Builder chainId(String hexStringNo0x) {
+            build.chainId = hexStringNo0x;
             return this;
         }
 
-        public Builder from(String hexString) {
-            build.from = hexString;
+        public Builder from(String hexStringNo0x) {
+            build.from = hexStringNo0x;
             return this;
         }
 
@@ -237,16 +227,16 @@ public class Transaction {
         return from;
     }
 
-    public void setFrom(String from) {
-        this.from = from;
+    public void setFrom(String hexStringNo0x) {
+        this.from = hexStringNo0x;
     }
 
     public String getTo() {
         return to;
     }
 
-    public void setTo(String to) {
-        this.to = to;
+    public void setTo(String hexStringNo0x) {
+        this.to = hexStringNo0x;
     }
 
     public BigInteger getGasLimit() {
@@ -277,8 +267,8 @@ public class Transaction {
         return data;
     }
 
-    public void setData(String data) {
-        this.data = data;
+    public void setData(String hexStringNo0x) {
+        this.data = hexStringNo0x;
     }
 
     public BigInteger getNonce() {
@@ -293,31 +283,31 @@ public class Transaction {
         return chainId;
     }
 
-    public void setChainId(String chainId) {
-        this.chainId = chainId;
+    public void setChainId(String hexStringNo0x) {
+        this.chainId = hexStringNo0x;
     }
 
     public String getV() {
         return v;
     }
 
-    public void setV(String v) {
-        this.v = v;
+    public void setV(String hexStringNo0x) {
+        this.v = hexStringNo0x;
     }
 
     public String getR() {
         return r;
     }
 
-    public void setR(String r) {
-        this.r = r;
+    public void setR(String hexStringNo0x) {
+        this.r = hexStringNo0x;
     }
 
     public String getS() {
         return s;
     }
 
-    public void setS(String s) {
-        this.s = s;
+    public void setS(String hexStringNo0x) {
+        this.s = hexStringNo0x;
     }
 }

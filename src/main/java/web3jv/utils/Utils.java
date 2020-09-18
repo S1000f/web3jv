@@ -42,7 +42,7 @@ public class Utils {
         return toWeiString(converted, originUnit);
     }
 
-    public static String toHexString(String decimal) {
+    public static String toHexStringNo0x(String decimal) {
         return Hex.toHexString(new BigInteger(decimal, 16).toByteArray());
     }
 }

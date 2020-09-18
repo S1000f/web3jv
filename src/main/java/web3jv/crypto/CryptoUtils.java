@@ -4,7 +4,7 @@ import org.bouncycastle.jcajce.provider.digest.Keccak;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.encoders.Hex;
 
-public class Crypto {
+public class CryptoUtils {
 
     public static String getKeccack256HexString(String publicKey) {
         Keccak.DigestKeccak keccak = new Keccak.Digest256();
@@ -14,8 +14,12 @@ public class Crypto {
     }
 
     public static String getKeccack256HexString(byte[] input) {
+        return Hex.toHexString(getKeccack256Bytes(input));
+    }
+
+    public static byte[] getKeccack256Bytes(byte[] input) {
         Keccak.DigestKeccak keccak = new Keccak.Digest256();
-        return Hex.toHexString(keccak.digest(input));
+        return keccak.digest(input);
     }
 
 }

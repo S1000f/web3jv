@@ -10,7 +10,7 @@ public enum EtherUnit {
     MILLIETHER(15),
     ETHER(18);
 
-    private int weiValue;
+    private final int weiValue;
 
     EtherUnit(int weiValue) {
         this.weiValue = weiValue;

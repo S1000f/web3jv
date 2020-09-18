@@ -1,20 +1,11 @@
 package web3jv.utils;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import web3jv.jsonrpc.Web3jv;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class TestUtils {
-
-    public Web3jv web3jv;
-
-    @BeforeEach
-    public void setUp() {
-        web3jv = new Web3jv("https://ropsten.infura.io/v3/ff7a2a6b2e054541a1b4bffe4c58bd11");
-    }
 
     @DisplayName("18자리 wei를 ether로 변환시 0.x...가 된다")
     @Test
@@ -64,6 +55,7 @@ public class TestUtils {
         assertEquals("24000000000000000000", result5);
     }
 
+    @DisplayName("Gwei단위가 wei단위로 변환된다")
     @Test
     public void toWeiFromMicroetherTest() {
         String result = Utils.toWeiString("0.545109094442210255", EtherUnit.GWEI);

@@ -1,5 +1,6 @@
 package web3jv.wallet;
 
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -54,4 +55,5 @@ public class TestWallet {
         assertTrue(Wallet.checkAddressEIP55("0x7b74C763119a062A52AEf110e949542f838bB660"));
         assertTrue(result);
     }
+
 }

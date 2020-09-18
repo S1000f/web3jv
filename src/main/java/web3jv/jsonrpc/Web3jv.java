@@ -14,32 +14,51 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Optional;
 
-public class Web3jv {
+public class Web3jv implements Web3jvProvider {
 
     private final ObjectMapper mapper = new ObjectMapper();
     private String endpoint;
-    private String netVersion;
+    private String chainId;
 
     public Web3jv() {
     }
 
     public Web3jv(String endpoint) {
         this.endpoint = endpoint;
-        this.netVersion = netVersion();
+        this.chainId = Optional.ofNullable(netVersion()).orElse("0");
+    }
+
+    public Web3jv(String endpoint, ChainId chainId) {
+        this.endpoint = endpoint;
+        this.chainId = chainId.toString();
     }
 
     public String getEndpoint() {
         return endpoint;
     }
 
-    public void setEndpoint(String url) {
-        this.endpoint = url;
-        this.netVersion = netVersion();
+    public void setEndpoint(String endpoint, ChainId chainId) {
+        this.endpoint = endpoint;
+        this.chainId = chainId.toString();
     }
 
-    public String getNetVersion() {
-        return netVersion;
+    public void setEndpoint(String endpoint, String customChainId) {
+        this.endpoint = endpoint;
+        this.chainId = customChainId;
+    }
+
+    public String getChainId() {
+        return chainId;
+    }
+
+    public void setChainId(ChainId chain) {
+        this.chainId = chain.toString();
+    }
+
+    public void setCustomChainId(String customChainId) {
+        this.chainId = customChainId;
     }
 
     public String netVersion() {
@@ -99,11 +118,11 @@ public class Web3jv {
         return new BigInteger(result.substring(2), 16);
     }
 
-    public String ethSendRawTransaction(String signedHexString) throws IOException {
+    public String ethSendRawTransaction(String signedHexString0x) throws IOException {
         return jsonRpc(new RequestBody(
                 "2.0",
                 "eth_sendRawTransaction",
-                Collections.singletonList(signedHexString),
+                Collections.singletonList(signedHexString0x),
                 "1"
         )).getResult();
     }

@@ -20,7 +20,8 @@ public class TestWeb3jv {
 
     @Test
     public void web3jClientVersionTest() throws IOException {
-        web3jv.setEndpoint("https://ropsten.infura.io/v3/ff7a2a6b2e054541a1b4bffe4c58bd11");
+        // 테스트는 아래의 엔드포인트의 상황에 따라 실패할 수 도 있음
+        web3jv.setEndpoint("https://ropsten.infura.io/v3/ff7a2a6b2e054541a1b4bffe4c58bd11", ChainId.ROPSTEN);
         String result = web3jv.web3ClientVersion();
 
         assertEquals("Geth/v1.9.9-omnibus-e320ae4c-20191206/linux-amd64/go1.13.4", result);
