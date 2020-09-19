@@ -15,7 +15,6 @@
             <artifactId>cava-rlp</artifactId>
             <version>0.5.0</version>
         </dependency>
-
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk15on</artifactId>
@@ -33,11 +32,6 @@
             <artifactId>junit-jupiter</artifactId>
             <version>5.5.0</version>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <version>1.18.8</version>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>

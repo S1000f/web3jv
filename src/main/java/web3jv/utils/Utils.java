@@ -45,4 +45,8 @@ public class Utils {
     public static String toHexStringNo0x(String decimal) {
         return Hex.toHexString(new BigInteger(decimal, 16).toByteArray());
     }
+
+    public static String toHexStringNo0x(int decimal) {
+        return toHexStringNo0x(String.valueOf(decimal));
+    }
 }

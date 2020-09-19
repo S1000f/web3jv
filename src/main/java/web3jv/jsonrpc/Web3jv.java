@@ -16,6 +16,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
 
+/**
+ *
+ */
 public class Web3jv implements Web3jvProvider {
 
     private final ObjectMapper mapper = new ObjectMapper();
@@ -91,11 +94,11 @@ public class Web3jv implements Web3jvProvider {
         return new BigDecimal(bigInteger);
     }
 
-    public BigInteger ethGetTransactionCount(String address) throws IOException {
+    public BigInteger ethGetTransactionCount(String addressFrom) throws IOException {
         String result = jsonRpc(new RequestBody(
                 "2.0",
                 "eth_getTransactionCount",
-                Arrays.asList(address, "latest"),
+                Arrays.asList(addressFrom, "latest"),
                 "1"
         )).getResult();
 
@@ -127,7 +130,18 @@ public class Web3jv implements Web3jvProvider {
         )).getResult();
     }
 
-    private <T extends RequestInterface> ResponseInterface jsonRpc(T rawBody) throws IOException {
+    /**
+     * Http Connection 을 통해 JSON-RPC 메소드를 호출한다.용
+     *
+     * @apiNote Json 파싱을 위해 Jackson-databind 사
+     * @param rawBody {@link RequestInterface} 구현객체 인스턴스
+     * @param <T> {@link RequestInterface}
+     * @return {@link ResponseInterface}
+     * @throws IOException 노드와 연결이 안되거나, jackson 맵퍼가 {@code rawBody}를
+     * 맵핑하지 못할 시 발생
+     * @since 0.1.0
+     */
+    public <T extends RequestInterface> ResponseInterface jsonRpc(T rawBody) throws IOException {
         URL url = new URL(endpoint);
         HttpURLConnection conn = (HttpURLConnection)url.openConnection();
         conn.setRequestMethod("POST");
@@ -136,6 +150,7 @@ public class Web3jv implements Web3jvProvider {
         conn.setDoOutput(true);
 
         String rawBodyString = mapper.writeValueAsString(rawBody);
+
         try (OutputStream os = conn.getOutputStream()) {
             byte[] input = rawBodyString.getBytes(StandardCharsets.UTF_8);
             os.write(input, 0, input.length);

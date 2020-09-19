@@ -18,7 +18,28 @@ import web3jv.wallet.Wallet;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.Optional;
 
+/**
+ * <p>트랜젝션 전송을 위한 트랜젝션 바디 객체. 트랜젝션 전송과정:
+ * <blockquote><pre>
+ *     1. 트랜젝션 인스턴스 생성
+ *     2. 트랜젝션 필드값 주입
+ *     3. 사이닝({@link Transaction#signRawTransaction})
+ *     4. 사인된 트랜젝션을 파라미터로 json-rpc 호출
+ * </pre></blockquote>
+ * 인스턴스 생성 및 초기화 방식:
+ * <blockquote><pre>
+ *     1. 생성자함수
+ *     2. 빌더패턴({@link Transaction#builder})
+ * @see Transaction#signRawTransaction
+ * @see Transaction#builder()
+ * @see EncoderProvider
+ * @see web3jv.jsonrpc.Web3jv#ethSendRawTransaction
+ * @since 0.1.0
+ * @author 김도협(닉)
+ * @version 0.1.0
+ */
 public class Transaction {
 
     private BigInteger nonce;
@@ -33,13 +54,33 @@ public class Transaction {
     private String chainId;
     private String from;
 
-    public Transaction() {
+    private Transaction() {
     }
 
+    /**
+     * @apiNote eth_getEstimateGas 호출을 위해서만 사용할 것
+     * @param to '0x' 없는 hex String
+     * @since 0.1.0
+     */
     public Transaction(String to) {
         this.to = to;
     }
 
+    /**
+     * <p>트랜젝션 인스턴스를 생성하고 초기화 한다. {@link Transaction#builder()}를 사용할 수 도 있다.
+     * @param nonce BigInteger 논스
+     * @param gasPrice BigInteger 가스가격
+     * @param gasLimit BigInteger 가스리미트
+     * @param to String('0x' 없는 hex String) 수신주소(토큰일 경우 컨트랙트 주소)
+     * @param value BigInteger 수량
+     * @param data String 데이터(공백일 경우 "" 입력)
+     * @param r String r값("" 입력)
+     * @param s String s값("" 입력)
+     * @param chainId String('0x' 없는 hex String) 체인 식별자(사이닝 전 v 필드에 대입됨)
+     * @param from String('0x' 없는 hex String) 송신주소(""입력)
+     *
+     * @since 0.1.0
+     */
     public Transaction(
             BigInteger nonce,
             BigInteger gasPrice,
@@ -64,6 +105,16 @@ public class Transaction {
         this.from = from;
     }
 
+    /**
+     * 트랜젝션 바디를 사이닝한다.
+     * @param web3jv {@link Web3jvProvider}을 구현한 'json-rpc' wrapper 객체의 인스턴스
+     * @param privateKey String 전송자의 개인키
+     * @param encoder {@link EncoderProvider}을 구현한 인코더
+     * @return String '0x'를 포함한 인코딩된 hex String
+     * @see Web3jvProvider
+     * @see EncoderProvider
+     * @since 0.1.0
+     */
     public String signRawTransaction(Web3jvProvider web3jv, String privateKey, EncoderProvider encoder) {
         ECNamedCurveParameterSpec params = ECNamedCurveTable.getParameterSpec("secp256k1");
         ECDomainParameters domain = new ECDomainParameters(params.getCurve(), params.getG(), params.getN());
@@ -78,10 +129,10 @@ public class Transaction {
         encoder.setGasLimit(this.gasLimit);
         encoder.setTo(this.to);
         encoder.setValue(this.value);
-        encoder.setData(this.data);
-        encoder.setV(this.v);
-        encoder.setR(this.r);
-        encoder.setS(this.s);
+        encoder.setData(Optional.ofNullable(this.data).orElse(""));
+        encoder.setV(Optional.ofNullable(this.v).orElse(this.chainId));
+        encoder.setR(Optional.ofNullable(this.r).orElse(""));
+        encoder.setS(Optional.ofNullable(this.s).orElse(""));
 
         byte[] messageHash = new Keccak.Digest256().digest(encoder.encode());
         BigInteger[] sigs = signer.generateSignature(messageHash);
@@ -151,7 +202,10 @@ public class Transaction {
     }
 
     /**
-     * builder
+     * 생성자함수 대신 빌더 패턴으로 인스턴스 생성.
+     * @apiNote String 타입 매개변수명에 'No0x' 가 있을경우 '0x'가 없는 hex String 을 전달할 것.
+     * @return Builder
+     * @since 0.1.0
      */
     public static Builder builder() {
         return new Builder();
