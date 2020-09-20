@@ -201,8 +201,8 @@ public class Transaction {
     }
 
     /**
-     * 생성자함수 대신 빌더 패턴으로 인스턴스 생성.
-     * @apiNote String 타입 매개변수명에 'No0x' 가 있을경우 '0x'가 없는 hex String 을 전달할 것.
+     * <p>생성자함수 대신 빌더 패턴으로 인스턴스 생성. String 타입 매개변수명에
+     * 'No0x' 가 있을경우 '0x'가 없는 hex String 을 전달할 것.</p>
      * @return Builder
      * @since 0.1.0
      */
