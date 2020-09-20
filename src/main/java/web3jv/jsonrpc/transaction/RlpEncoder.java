@@ -1,12 +1,12 @@
 package web3jv.jsonrpc.transaction;
 
 import net.consensys.cava.rlp.RLP;
-import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import web3jv.utils.Utils;
 
 import java.math.BigInteger;
 
 /**
- * <p>RLP 인코더.
+ * <p>RLP 인코더.</p>
  * @implNote net.consensys.cava 라이브러리 사용
  * @see RlpEncoder#encode()
  * @see web3jv.jsonrpc.transaction.EncoderProvider
@@ -28,7 +28,7 @@ public class RlpEncoder implements EncoderProvider {
 
     /**
      * <p>트랜젝션 바디의 각 필드값을 RLP 인코딩 체계로 인코딩한다. 인코딩 하기 전에
-     * 본 인스턴스에 인코딩될 값들을 주입해야 한다.
+     * 본 인스턴스에 인코딩될 값들을 주입해야 한다.</p>
      * @return byte[] 인코딩된 값
      * @since 0.1.0
      */
@@ -37,12 +37,12 @@ public class RlpEncoder implements EncoderProvider {
             writer.writeBigInteger(this.nonce);
             writer.writeBigInteger(this.gasPrice);
             writer.writeBigInteger(this.gasLimit);
-            writer.writeByteArray(ByteUtils.fromHexString(this.to));
+            writer.writeByteArray(Utils.toBytes(this.to));
             writer.writeBigInteger(this.value);
-            writer.writeByteArray(ByteUtils.fromHexString(this.data));
-            writer.writeByteArray(ByteUtils.fromHexString(this.v));
-            writer.writeByteArray(ByteUtils.fromHexString(this.r));
-            writer.writeByteArray(ByteUtils.fromHexString(this.s));
+            writer.writeByteArray(Utils.toBytes(this.data));
+            writer.writeByteArray(Utils.toBytes(this.v));
+            writer.writeByteArray(Utils.toBytes(this.r));
+            writer.writeByteArray(Utils.toBytes(this.s));
         }).toArray();
     }
 

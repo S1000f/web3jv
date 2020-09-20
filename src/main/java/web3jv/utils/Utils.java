@@ -1,5 +1,6 @@
 package web3jv.utils;
 
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.encoders.Hex;
 
 import java.math.BigDecimal;
@@ -42,11 +43,19 @@ public class Utils {
         return toWeiString(converted, originUnit);
     }
 
+    public static String toHexStringNo0x(byte[] input) {
+        return Hex.toHexString(input);
+    }
+
     public static String toHexStringNo0x(String decimal) {
         return Hex.toHexString(new BigInteger(decimal, 16).toByteArray());
     }
 
     public static String toHexStringNo0x(int decimal) {
         return toHexStringNo0x(String.valueOf(decimal));
+    }
+
+    public static byte[] toBytes(String hexStringNo0x) {
+        return ByteUtils.fromHexString(hexStringNo0x);
     }
 }

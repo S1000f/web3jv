@@ -6,13 +6,14 @@ import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.encoders.Hex;
 import web3jv.crypto.CryptoUtils;
+import web3jv.utils.Utils;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.Arrays;
-import java.util.Random;
 import java.util.UUID;
 
 import static web3jv.crypto.CryptoUtils.getKeccack256HexString;
@@ -29,14 +30,14 @@ public class Wallet {
     private static final int CURRENT_VERSION = 3;
 
     private static final String CIPHER = "aes-128-ctr";
-    static final String AES_128_CTR = "pbkdf2";
-    static final String SCRYPT = "scrypt";
+    private static final String AES_128_CTR = "pbkdf2";
+    private static final String SCRYPT = "scrypt";
 
-    public String generatePrivateKey() {
-        return generateRandomLength(64);
+    public static String generatePrivateKey() {
+        return generateRandomHexStringNo0x(64);
     }
 
-    public String getPublicKey(String priKey) {
+    public static String getPublicKey(String priKey) {
         byte[] priByte = (new BigInteger(priKey, 16)).toByteArray(); // ec = 제로패딩 있어야 함
         ECNamedCurveParameterSpec params = ECNamedCurveTable.getParameterSpec("secp256k1");
         ECPoint pointQ = params.getG().multiply(new BigInteger(priByte));
@@ -44,13 +45,21 @@ public class Wallet {
         return Hex.toHexString(pointQ.getEncoded(false)).substring(2);
     }
 
-    public String getAddress(String pubKey) {
+    public static String getAddressNo0x(String pubKey) {
         String uncut = getKeccack256HexString(pubKey);
-        return "0x" + uncut.substring(uncut.length() - 40);
+        return uncut.substring(uncut.length() - 40);
     }
 
-    public String getAddressFromPrivateKey(String privateKey) {
+    public static String getAddress(String pubKey) {
+        return "0x" + getAddressNo0x(pubKey);
+    }
+
+    public static String getAddressFromPrivateKey(String privateKey) {
         return getAddress(getPublicKey(privateKey));
+    }
+
+    public static String getAddressNo0xFromPrivatKey(String privateKey) {
+        return getAddressNo0x(getPublicKey(privateKey));
     }
 
     public static boolean checkAddressEIP55(String address) {
@@ -82,25 +91,85 @@ public class Wallet {
         return "0x" + String.valueOf(subject);
     }
 
-    public WalletFile generateWalletFile(String password, String privateKey) {
-
+    public static WalletFile generateWalletFile(String password, String privateKey) throws InterruptedException {
         /* Derived Key(파생 키)
         * 비밀번호를 솔트와 n, p, r 을 이용하여 Scrypt 방법으로 암호화 하여 파생키를 생성함
         * salt : 암호를 강화하기 위한 무작위의 난수집합
         * n :
         * r :
         * p :
-        * DERIVED_KEY_LENGTH :
+        * DERIVED_KEY_LENGTH : 파생키의 길이 지정
         * */
-        byte[] salt = generateRandomBytes(32);
+        byte[] salt = new BigInteger(generateSalt(64), 16).toByteArray();
         int n = n_4096;
+        int r = R;
         int p = P;
-        byte[] derivedKey = SCrypt.generate(password.getBytes(), salt, n, R, p, DERIVED_KEY_LENGTH);
+        int dklen = DERIVED_KEY_LENGTH;
+        byte[] derivedKey = generateDerivedKey(password, salt, n, r, p, dklen);
 
         /* CipherText
         * 개인키를 iv 와 aes_ctr_encrypt 함수를 사용하여 암호화
         * */
-        byte[] iv = generateRandomBytes(16);
+        byte[] iv = new BigInteger(generateIv(32), 16).toByteArray();
+        byte[] cipherText = generateCipherText(1, iv, derivedKey, Utils.toBytes(privateKey));
+        while (cipherText.length == 0) {
+            Thread.sleep(10L);
+            iv = new BigInteger(generateIv(32), 16).toByteArray();
+            cipherText = generateCipherText(1, iv, derivedKey, Utils.toBytes(privateKey));
+        }
+
+        /* mac(Message authentication code)
+        * 암호화된 대상(메시지)이 유효한지 확인하고 복호화 할때 필요함
+        * derivedkey 와 cipherText 를 사용하여 생성
+        * */
+        byte[] mac = generateMac(derivedKey, cipherText);
+
+        return buildWalletFile(privateKey, salt, iv, cipherText, mac, n, p);
+    }
+
+    public static String decrypt(String password, WalletFile walletFile) throws CipherSupportedException {
+        WalletFile.Crypto crypto = walletFile.getCrypto();
+        byte[] mac = Utils.toBytes(crypto.getMac());
+        byte[] iv = Utils.toBytes(crypto.getCipherparams().getIv());
+        byte[] cipherText = Utils.toBytes(crypto.getCiphertext());
+
+        WalletFile.Kdfparams kdfParams = crypto.getKdfparams();
+        byte[] derivedKey;
+        int c;
+        if (crypto.getKdf().toLowerCase().equals("scrypt")) {
+            c = kdfParams.getDklen();
+            int n = kdfParams.getN();
+            int p = kdfParams.getP();
+            int r = kdfParams.getR();
+            byte[] salt = Utils.toBytes(kdfParams.getSalt());
+            derivedKey = generateDerivedKey(password, salt, n, r, p, c);
+        } else {
+            throw new CipherSupportedException("Unable to decrypt params of :" + crypto.getKdf());
+        }
+
+        byte[] derivedMac = generateMac(derivedKey, cipherText);
+        if (! Utils.toHexStringNo0x(mac).equals(Utils.toHexStringNo0x(derivedMac))) {
+            throw new CipherSupportedException("Invalid password provided");
+        } else {
+            byte[] encryptKey = Arrays.copyOfRange(derivedKey, 0, 16);
+            byte[] privateKey = generateCipherText(2, iv, encryptKey, cipherText);
+
+            return Utils.toHexStringNo0x(privateKey);
+        }
+    }
+
+    private static byte[] generateMac(byte[] derivedKey, byte[] cipherText) {
+        byte[] result = new byte[16 + cipherText.length];
+        System.arraycopy(derivedKey, 16, result, 0, 16);
+        System.arraycopy(cipherText, 0, result, 16, cipherText.length);
+        return CryptoUtils.getKeccack256Bytes(result);
+    }
+
+    private static byte[] generateDerivedKey(String password, byte[] salt, int n, int r, int p, int dklen) {
+        return SCrypt.generate(new BigInteger(password, 10).toByteArray(), salt, n, r, p, dklen);
+    }
+
+    private static byte[] generateCipherText(int mode, byte[] iv, byte[] derivedKey, byte[] target) {
         byte[] cipherText = new byte[0];
         try {
             IvParameterSpec ivParameterSpec = new IvParameterSpec(iv);
@@ -108,25 +177,16 @@ public class Wallet {
 
             SecretKeySpec secretKeySpec =
                     new SecretKeySpec(Arrays.copyOfRange(derivedKey, 0, 16), "AES");
-            cipher.init(1, secretKeySpec, ivParameterSpec);
-            cipherText = cipher.doFinal(new BigInteger(privateKey, 16).toByteArray());
+            cipher.init(mode, secretKeySpec, ivParameterSpec);
+            cipherText = cipher.doFinal(target);
         } catch (Exception e) {
             e.getStackTrace();
         }
 
-        /* mac(Message authentication code)
-        * 암호화된 대상(메시지)이 유효한지 확인하고 복호화 할때 필요함
-        * derivedkey 와 cipherText 를 사용하여 생성
-        * */
-        byte[] result = new byte[16 + cipherText.length];
-        System.arraycopy(derivedKey, 16, result, 0, 16);
-        System.arraycopy(cipherText, 0, result, 16, cipherText.length);
-        byte[] mac = CryptoUtils.getKeccack256Bytes(result);
-
-        return buildWalletFile(privateKey, salt, iv, cipherText, mac, n, p);
+        return cipherText;
     }
 
-    private WalletFile buildWalletFile(
+    private static WalletFile buildWalletFile(
             String privateKey,
             byte[] salt,
             byte[] iv,
@@ -136,7 +196,7 @@ public class Wallet {
             int p
     ) {
         WalletFile walletFile = new WalletFile();
-        walletFile.setAddress(getAddress(privateKey));
+        walletFile.setAddress(getAddressNo0xFromPrivatKey(privateKey));
         walletFile.setId(UUID.randomUUID().toString());
         walletFile.setVersion(CURRENT_VERSION);
 
@@ -144,7 +204,8 @@ public class Wallet {
         crypto.setCipher(CIPHER);
         crypto.setCiphertext(Hex.toHexString(cipherText));
         crypto.setKdf(SCRYPT);
-        crypto.setMac(Hex.toHexString(mac));
+        String hexStringMac = Hex.toHexString(mac);
+        crypto.setMac(hexStringMac.startsWith("00") ? hexStringMac.substring(2) : hexStringMac);
 
         WalletFile.Cipherparams cipherparams = new WalletFile.Cipherparams();
         cipherparams.setIv(Hex.toHexString(iv));
@@ -156,7 +217,7 @@ public class Wallet {
         kdfparams.setR(R);
         kdfparams.setSalt(Hex.toHexString(salt));
 
-        crypto.setCipherParams(cipherparams);
+        crypto.setCipherparams(cipherparams);
         crypto.setKdfparams(kdfparams);
 
         walletFile.setCrypto(crypto);
@@ -164,15 +225,31 @@ public class Wallet {
         return walletFile;
     }
 
-    private byte[] generateRandomBytes(int length) {
-        return generateRandomLength(length).getBytes();
-    }
-
-    private String generateRandomLength(int length) {
-        Random random = new Random();
+    private static String generateIv(int length) {
+        SecureRandom random = new SecureRandom();
         StringBuilder privateKey = new StringBuilder();
         for (int i = 0; i < length; i++) {
             privateKey.append(Integer.toHexString(random.nextInt(16)));
+        }
+
+        return privateKey.toString();
+    }
+
+    private static String generateSalt(int length) {
+        SecureRandom random = new SecureRandom();
+        StringBuilder privateKey = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            privateKey.append(Integer.toHexString(random.nextInt(16)));
+        }
+
+        return privateKey.toString();
+    }
+
+    private static String generateRandomHexStringNo0x(int length) {
+        SecureRandom secureRandom = new SecureRandom();
+        StringBuilder privateKey = new StringBuilder();
+        for (int i = 0; i < length; i++) {
+            privateKey.append(Integer.toHexString(secureRandom.nextInt(16)));
         }
 
         return privateKey.toString();

@@ -39,10 +39,17 @@ public class WalletFile {
         this.version = version;
     }
 
+    @Override
+    public String toString() {
+        return "address: " + address + "\n" +
+                "id: " + id + "\n" +
+                "version: " + version;
+    }
+
     public static class Crypto {
         private String cipher;
         private String ciphertext;
-        private Cipherparams cipherParams;
+        private Cipherparams cipherparams;
         private String kdf;
         private Kdfparams kdfparams;
         private String mac;
@@ -63,12 +70,12 @@ public class WalletFile {
             this.ciphertext = ciphertext;
         }
 
-        public Cipherparams getCipherParams() {
-            return cipherParams;
+        public Cipherparams getCipherparams() {
+            return cipherparams;
         }
 
-        public void setCipherParams(Cipherparams cipherParams) {
-            this.cipherParams = cipherParams;
+        public void setCipherparams(Cipherparams cipherparams) {
+            this.cipherparams = cipherparams;
         }
 
         public String getKdf() {
@@ -93,6 +100,14 @@ public class WalletFile {
 
         public void setMac(String mac) {
             this.mac = mac;
+        }
+
+        @Override
+        public String toString() {
+            return "cipher : " + cipher + "\n" +
+                    "ciphertext : " + ciphertext + "\n" +
+                    "kdf : " + kdf + "\n" +
+                    "mac : " + mac;
         }
     }
 
@@ -153,6 +168,15 @@ public class WalletFile {
 
         public void setSalt(String salt) {
             this.salt = salt;
+        }
+
+        @Override
+        public String toString() {
+            return "dklen : " + dklen + "\n" +
+                    "n : " + n + "\n" +
+                    "p : " + p + "\n" +
+                    "r : " + r + "\n" +
+                    "salt : " + salt;
         }
     }
 

@@ -1,6 +1,7 @@
 package web3jv.jsonrpc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import web3jv.jsonrpc.transaction.EncoderProvider;
 import web3jv.jsonrpc.transaction.Transaction;
 
 import java.io.BufferedReader;
@@ -17,7 +18,24 @@ import java.util.Collections;
 import java.util.Optional;
 
 /**
- *
+ * <p>이더리움 클라이언트의 <i>JSON-RPC</i> HTTP 통신을 랩핑한 객체. 인스턴스 생성 후
+ * 네트워크의 엔드포인트를 초기화 할 것. 사설 네트워크는 별도의 체인아이디 설정이
+ * 필요함.</p>
+ * 구현된 <i>JSON-RPC</i> 목록(geth):
+ * <pre>
+ *     net_version
+ *     web3_clientVersion
+ *     eth_blockNumber
+ *     eth_getBalance
+ *     eth_getTransactionCount
+ *     eth_gasPrice
+ *     eth_estimateGas
+ *     eth_sendRawTransaction
+ * </pre>
+ * @see Transaction
+ * @since 0.1.0
+ * @author 김도협(닉)
+ * @version 0.1.0
  */
 public class Web3jv implements Web3jvProvider {
 
@@ -130,10 +148,19 @@ public class Web3jv implements Web3jvProvider {
         )).getResult();
     }
 
+    public String ethSendRawTransaction(Transaction rawTx, String priKey, EncoderProvider encoder) throws IOException {
+        return jsonRpc(new RequestBody(
+                "2.0",
+                "eth_sendRawTransaction",
+                Collections.singletonList(rawTx.signRawTransaction(this, priKey, encoder)),
+                "1"
+        )).getResult();
+    }
+
     /**
-     * Http Connection 을 통해 JSON-RPC 메소드를 호출한다.용
+     * Http Connection 을 통해 JSON-RPC 메소드를 호출한다.
      *
-     * @apiNote Json 파싱을 위해 Jackson-databind 사
+     * @apiNote Json 파싱을 위해 Jackson-databind 사용
      * @param rawBody {@link RequestInterface} 구현객체 인스턴스
      * @param <T> {@link RequestInterface}
      * @return {@link ResponseInterface}

@@ -6,13 +6,13 @@ import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
-import org.bouncycastle.jcajce.provider.digest.Keccak;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.custom.sec.SecP256K1Curve;
 import org.bouncycastle.util.encoders.Hex;
+import web3jv.crypto.CryptoUtils;
 import web3jv.jsonrpc.Web3jvProvider;
 import web3jv.wallet.Wallet;
 
@@ -22,16 +22,17 @@ import java.util.Optional;
 
 /**
  * <p>트랜젝션 전송을 위한 트랜젝션 바디 객체. 트랜젝션 전송과정:
- * <blockquote><pre>
+ * <pre>
  *     1. 트랜젝션 인스턴스 생성
  *     2. 트랜젝션 필드값 주입
- *     3. 사이닝({@link Transaction#signRawTransaction})
+ *     3. 사이닝
  *     4. 사인된 트랜젝션을 파라미터로 json-rpc 호출
- * </pre></blockquote>
+ * </pre>
  * 인스턴스 생성 및 초기화 방식:
- * <blockquote><pre>
+ * <pre>
  *     1. 생성자함수
  *     2. 빌더패턴({@link Transaction#builder})
+ * </pre></p>
  * @see Transaction#signRawTransaction
  * @see Transaction#builder()
  * @see EncoderProvider
@@ -120,7 +121,6 @@ public class Transaction {
         ECDomainParameters domain = new ECDomainParameters(params.getCurve(), params.getG(), params.getN());
         ECPrivateKeyParameters priKey =
                 new ECPrivateKeyParameters(new BigInteger(privateKey, 16), domain);
-
         ECDSASigner signer = new ECDSASigner(new HMacDSAKCalculator(new SHA256Digest()));
         signer.init(true, priKey);
 
@@ -133,8 +133,8 @@ public class Transaction {
         encoder.setV(Optional.ofNullable(this.v).orElse(this.chainId));
         encoder.setR(Optional.ofNullable(this.r).orElse(""));
         encoder.setS(Optional.ofNullable(this.s).orElse(""));
+        byte[] messageHash = CryptoUtils.getKeccack256Bytes(encoder.encode());
 
-        byte[] messageHash = new Keccak.Digest256().digest(encoder.encode());
         BigInteger[] sigs = signer.generateSignature(messageHash);
         BigInteger r = sigs[0], s = sigs[1];
 
@@ -146,7 +146,7 @@ public class Transaction {
         int recId = -1;
         for (int i = 0; i < 4; i++) {
             BigInteger k = recoverFromSignature(domain, messageHash, r, s, i);
-            if (k != null && k.equals(new BigInteger(new Wallet().getPublicKey(privateKey), 16))) {
+            if (k != null && k.equals(new BigInteger(Wallet.getPublicKey(privateKey), 16))) {
                 recId = i;
                 break;
             }
@@ -156,7 +156,6 @@ public class Transaction {
         byte[] rBytes = r.toByteArray();
         this.r = rBytes.length == 32 ? Hex.toHexString(rBytes) : Hex.toHexString(rBytes).substring(2);
         this.s = Hex.toHexString(s.toByteArray());
-
         encoder.setV(this.v);
         encoder.setR(this.r);
         encoder.setS(this.s);

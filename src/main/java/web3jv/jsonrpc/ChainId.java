@@ -4,14 +4,14 @@ import web3jv.utils.Utils;
 
 /**
  * <p>알려진 이더리움 네트워크의 체인아이디 값. 목록:
- * <blockquote><pre>
+ * <pre>
  *     이더리움 메인넷: 1
  *     Ropsten 테스트넷: 3
  *     Rinkeby 테스트넷: 4
  *     Goerli 테스트넷: 5
  *     Kovan 테스트넷: 42
  *     Geth 사설네트워크 default: 1337
- * </pre></blockquote>
+ * </pre></p>
  * @see ChainId#toInt()
  * @see ChainId#toHexStringNo0x()
  * @since 0.1.0

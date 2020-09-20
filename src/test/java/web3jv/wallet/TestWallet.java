@@ -1,6 +1,5 @@
 package web3jv.wallet;
 
-import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,7 +20,7 @@ public class TestWallet {
     @Test
     public void generatePublicKeyFromPrivateKey() {
         String SamplePriKey = "18dd1dcd752466afa3d1fac1424333c6461c3a0f1d6702e9c45bc9254ec74e5f";
-        String result = wallet.getPublicKey(SamplePriKey);
+        String result = Wallet.getPublicKey(SamplePriKey);
 
         assertEquals("bdfb71e2d953406c45279ac434667a6a1ea9fae608af91e7f6bfb0792011df760895a528e8b8362288" +
                 "6039b4803b6182d708fb40a16919bddaef84493ef1d4cf", result);
@@ -30,10 +29,10 @@ public class TestWallet {
     @DisplayName("개인키 입력시 주소가 생성된다")
     @Test
     public void generateAddress() {
-        String privateKey = "66bf9bc7fe86b73a085d53555ce99add3a013ef0df86b209d4713361a77e6e89";
-        String derived = "0xa11CB28A6066684DB968075101031d3151dC40ED";
+        String privateKey = "ff4a5c68bd14cc1bb762274a18b3777bd049456f73c8dd0a0df0cd80bec1812f";
+        String derived = "0x4038aa65ab984c1816c0e27c54da14ac21e93643";
         String expected = derived.toLowerCase();
-        String address = wallet.getAddress(wallet.getPublicKey(privateKey));
+        String address = Wallet.getAddress(Wallet.getPublicKey(privateKey));
 
         assertEquals(expected, address);
     }
