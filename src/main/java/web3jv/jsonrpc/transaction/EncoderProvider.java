@@ -1,6 +1,7 @@
 package web3jv.jsonrpc.transaction;
 
 import java.math.BigInteger;
+import java.util.List;
 
 /**
  * <p>트랜젝션 바디를 인코딩 하기위해 사용되는 인코더를 정의한 인터페이스.
@@ -10,6 +11,9 @@ import java.math.BigInteger;
  * 있으며(<a href="https://eth.wiki/en/fundamentals/rlp">참조</a>), 이더리움 인코딩 체계가
  * 변경 되거나, 다른 RLP 라이브러리를 적용 혹은 직접 제작할 경우 본 인터페이스를 구현
  * 하여야 한다.</p>
+ * <p>additional 필드는 이더리움 기본 클라이언트의 트랜젝션 구조에 포함되지 않는,
+ * 별도의 커스텀된 트랜젝션 구성항목을 포함하여 인코딩할때 사용된다. 추가 항목이 없을
+ * 경우엔 <i>null</i> 을 전달해야 한다.</p>
  *
  * @implSpec
  * 트랜젝션의 각 요소(<i>nonce, gasPrice, gasLimit, addressTo, value, data, v, r, s</i>)
@@ -31,5 +35,5 @@ public interface EncoderProvider {
     void setV(String v);
     void setR(String r);
     void setS(String s);
-
+    void setAdditional(List<byte[]> additional);
 }

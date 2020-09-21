@@ -50,12 +50,12 @@ public class Wallet {
         return uncut.substring(uncut.length() - 40);
     }
 
-    public static String getAddress(String pubKey) {
+    public static String getAddress0x(String pubKey) {
         return "0x" + getAddressNo0x(pubKey);
     }
 
     public static String getAddressFromPrivateKey(String privateKey) {
-        return getAddress(getPublicKey(privateKey));
+        return getAddress0x(getPublicKey(privateKey));
     }
 
     public static String getAddressNo0xFromPrivatKey(String privateKey) {

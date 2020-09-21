@@ -46,6 +46,22 @@ public class WalletFile {
                 "version: " + version;
     }
 
+    @Override
+    public int hashCode() {
+        String cutAddress = this.address.toLowerCase();
+        return (cutAddress.startsWith("0x") ? cutAddress.substring(2) : cutAddress).hashCode() +
+                this.version +
+                this.crypto.getKdf().toLowerCase().trim().hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof WalletFile) {
+            return this.hashCode() == obj.hashCode();
+        }
+        return false;
+    }
+
     public static class Crypto {
         private String cipher;
         private String ciphertext;

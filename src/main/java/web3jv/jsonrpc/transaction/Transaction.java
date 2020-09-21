@@ -1,23 +1,14 @@
 package web3jv.jsonrpc.transaction;
 
-import org.bouncycastle.asn1.x9.X9IntegerConverter;
-import org.bouncycastle.crypto.digests.SHA256Digest;
-import org.bouncycastle.crypto.params.ECDomainParameters;
-import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
-import org.bouncycastle.crypto.signers.ECDSASigner;
-import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
-import org.bouncycastle.math.ec.ECAlgorithms;
-import org.bouncycastle.math.ec.ECPoint;
-import org.bouncycastle.math.ec.custom.sec.SecP256K1Curve;
 import org.bouncycastle.util.encoders.Hex;
 import web3jv.crypto.CryptoUtils;
 import web3jv.jsonrpc.Web3jvProvider;
 import web3jv.wallet.Wallet;
 
 import java.math.BigInteger;
-import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -55,7 +46,7 @@ public class Transaction {
     private String chainId;
     private String from;
 
-    private Transaction() {
+    public Transaction() {
     }
 
     /**
@@ -108,44 +99,34 @@ public class Transaction {
 
     /**
      * 트랜젝션 바디를 사이닝한다.
+     * <p>additional 매개변수는 이더리움 기본 클라이언트의 트랜젝션 구조에 포함되지 않는,
+     * 별도의 커스텀된 트랜젝션 구성항목을 포함하여 인코딩할때 사용된다. 추가 항목이 없을
+     * 경우엔 <i>null</i> 을 전달해야 한다.</p>
      * @param web3jv {@link Web3jvProvider}을 구현한 'json-rpc' wrapper 객체의 인스턴스
      * @param privateKey String 전송자의 개인키
      * @param encoder {@link EncoderProvider}을 구현한 인코더
+     * @param additional 추가 항목. 해당되지 않을 경우 null 전달할 것
      * @return String '0x'를 포함한 인코딩된 hex String
      * @see Web3jvProvider
      * @see EncoderProvider
      * @since 0.1.0
      */
-    public String signRawTransaction(Web3jvProvider web3jv, String privateKey, EncoderProvider encoder) {
+    public String signRawTransaction(
+            Web3jvProvider web3jv,
+            String privateKey,
+            EncoderProvider encoder,
+            List<byte[]> additional
+    ) {
         ECNamedCurveParameterSpec params = ECNamedCurveTable.getParameterSpec("secp256k1");
-        ECDomainParameters domain = new ECDomainParameters(params.getCurve(), params.getG(), params.getN());
-        ECPrivateKeyParameters priKey =
-                new ECPrivateKeyParameters(new BigInteger(privateKey, 16), domain);
-        ECDSASigner signer = new ECDSASigner(new HMacDSAKCalculator(new SHA256Digest()));
-        signer.init(true, priKey);
 
-        encoder.setNonce(this.nonce);
-        encoder.setGasPrice(this.gasPrice);
-        encoder.setGasLimit(this.gasLimit);
-        encoder.setTo(this.to);
-        encoder.setValue(this.value);
-        encoder.setData(Optional.ofNullable(this.data).orElse(""));
-        encoder.setV(Optional.ofNullable(this.v).orElse(this.chainId));
-        encoder.setR(Optional.ofNullable(this.r).orElse(""));
-        encoder.setS(Optional.ofNullable(this.s).orElse(""));
+        setUpEncoder(encoder, additional);
         byte[] messageHash = CryptoUtils.getKeccack256Bytes(encoder.encode());
-
-        BigInteger[] sigs = signer.generateSignature(messageHash);
+        BigInteger[] sigs = CryptoUtils.signMessageByECDSA(encoder.encode(), privateKey);
         BigInteger r = sigs[0], s = sigs[1];
-
-        BigInteger otherS = params.getN().subtract(s);
-        if (s.compareTo(otherS) > 0) {
-            s = otherS;
-        }
 
         int recId = -1;
         for (int i = 0; i < 4; i++) {
-            BigInteger k = recoverFromSignature(domain, messageHash, r, s, i);
+            BigInteger k = CryptoUtils.recoverFromSignedMessage(params, messageHash, r, s, i);
             if (k != null && k.equals(new BigInteger(Wallet.getPublicKey(privateKey), 16))) {
                 recId = i;
                 break;
@@ -156,48 +137,22 @@ public class Transaction {
         byte[] rBytes = r.toByteArray();
         this.r = rBytes.length == 32 ? Hex.toHexString(rBytes) : Hex.toHexString(rBytes).substring(2);
         this.s = Hex.toHexString(s.toByteArray());
-        encoder.setV(this.v);
-        encoder.setR(this.r);
-        encoder.setS(this.s);
+        setUpEncoder(encoder, additional);
 
         return "0x" + Hex.toHexString(encoder.encode());
     }
 
-    private BigInteger recoverFromSignature(
-            ECDomainParameters domain,
-            byte[] messageHash,
-            BigInteger r,
-            BigInteger s,
-            int recId
-    ) {
-        BigInteger n = domain.getN();
-        BigInteger i = BigInteger.valueOf((long) recId / 2);
-        BigInteger x = r.add(i.multiply(n));
-
-        BigInteger prime = SecP256K1Curve.q;
-        if (x.compareTo(prime) >= 0) {
-            return null;
-        }
-
-        X9IntegerConverter x9 = new X9IntegerConverter();
-        byte[] compEnc = x9.integerToBytes(x, 1 + x9.getByteLength(domain.getCurve()));
-        compEnc[0] = (byte) (((recId & 1) == 1) ? 0x03 : 0x02);
-        ECPoint R = domain.getCurve().decodePoint(compEnc);
-
-        if (!R.multiply(n).isInfinity()) {
-            return null;
-        }
-
-        BigInteger e = new BigInteger(1, messageHash);
-        BigInteger eInv = BigInteger.ZERO.subtract(e).mod(n);
-        BigInteger rInv = r.modInverse(n);
-        BigInteger srInv = rInv.multiply(s).mod(n);
-        BigInteger eInvrInv = rInv.multiply(eInv).mod(n);
-        ECPoint q = ECAlgorithms.sumOfTwoMultiplies(domain.getG(), eInvrInv, R, srInv);
-
-        byte[] qBytes = q.getEncoded(false);
-
-        return new BigInteger(1, Arrays.copyOfRange(qBytes, 1, qBytes.length));
+    private void setUpEncoder(EncoderProvider encoder, List<byte[]> additional) {
+        encoder.setNonce(this.nonce);
+        encoder.setGasPrice(this.gasPrice);
+        encoder.setGasLimit(this.gasLimit);
+        encoder.setTo(this.to);
+        encoder.setValue(this.value);
+        encoder.setData(Optional.ofNullable(this.data).orElse(""));
+        encoder.setV(Optional.ofNullable(this.v).orElse(this.chainId));
+        encoder.setR(Optional.ofNullable(this.r).orElse(""));
+        encoder.setS(Optional.ofNullable(this.s).orElse(""));
+        encoder.setAdditional(additional);
     }
 
     /**
@@ -360,5 +315,36 @@ public class Transaction {
 
     public void setS(String hexStringNo0x) {
         this.s = hexStringNo0x;
+    }
+
+    @Override
+    public String toString() {
+        return "nonce : " + this.nonce + "\n" +
+                "gasPrice : " + this.gasPrice + "\n" +
+                "gasLimit : " + this.gasLimit + "\n" +
+                "to : " + this.to + "\n" +
+                "value : " + this.value + "\n" +
+                "data : " + this.data + "\n" +
+                "v : " + this.v + "\n" +
+                "r : " + this.r + "\n" +
+                "s : " + this.s;
+    }
+
+    @Override
+    public int hashCode() {
+        return this.nonce.hashCode() +
+                this.to.toLowerCase().hashCode() +
+                Optional.ofNullable(this.data).orElse("").hashCode() +
+                (this.v.startsWith("0x") ? this.v.substring(2) : this.v).hashCode() +
+                Optional.ofNullable(this.r).orElse("").hashCode() +
+                Optional.ofNullable(this.s).orElse("").hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Transaction) {
+            return this.hashCode() == obj.hashCode();
+        }
+        return false;
     }
 }

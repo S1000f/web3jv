@@ -32,7 +32,7 @@ public class TestWallet {
         String privateKey = "ff4a5c68bd14cc1bb762274a18b3777bd049456f73c8dd0a0df0cd80bec1812f";
         String derived = "0x4038aa65ab984c1816c0e27c54da14ac21e93643";
         String expected = derived.toLowerCase();
-        String address = Wallet.getAddress(Wallet.getPublicKey(privateKey));
+        String address = Wallet.getAddress0x(Wallet.getPublicKey(privateKey));
 
         assertEquals(expected, address);
     }

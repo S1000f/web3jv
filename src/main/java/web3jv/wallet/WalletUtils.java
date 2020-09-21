@@ -107,7 +107,7 @@ public class WalletUtils {
      * <p>운영체제별로 정해진 기본 키스토어 파일 저장경로를 반환한다.</p>
      * 기본경로:
      * <pre>
-     *     윈도우: C:\유저이름\APPDATA\roaming\Ethereum\
+     *     윈도우: C:\Users\유저이름\AppData\Roaming\Ethereum
      *     맥: /Users/유저이름/Library/Ethereum
      *     유닉스/리눅스: /home/유저이름/.ethereum
      * </pre>

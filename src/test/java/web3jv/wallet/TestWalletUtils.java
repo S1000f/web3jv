@@ -44,6 +44,7 @@ public class TestWalletUtils {
         String filename = WalletUtils.saveKeystore(walletFile);
         WalletFile loadedFromDisk = WalletUtils.loadKeystore(filename);
 
+        assertEquals(walletFile, loadedFromDisk);
         assertEquals(walletFile.getCrypto().getCiphertext(), loadedFromDisk.getCrypto().getCiphertext());
         assertEquals(walletFile.getId(), loadedFromDisk.getId());
     }

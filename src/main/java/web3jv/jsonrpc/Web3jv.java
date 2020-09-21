@@ -15,6 +15,7 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -148,11 +149,16 @@ public class Web3jv implements Web3jvProvider {
         )).getResult();
     }
 
-    public String ethSendRawTransaction(Transaction rawTx, String priKey, EncoderProvider encoder) throws IOException {
+    public String ethSendRawTransaction(
+            Transaction rawTx,
+            String priKey,
+            EncoderProvider encoder,
+            List<byte[]> additional
+    ) throws IOException {
         return jsonRpc(new RequestBody(
                 "2.0",
                 "eth_sendRawTransaction",
-                Collections.singletonList(rawTx.signRawTransaction(this, priKey, encoder)),
+                Collections.singletonList(rawTx.signRawTransaction(this, priKey, encoder, additional)),
                 "1"
         )).getResult();
     }

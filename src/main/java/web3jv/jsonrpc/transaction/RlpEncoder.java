@@ -1,12 +1,17 @@
 package web3jv.jsonrpc.transaction;
 
 import net.consensys.cava.rlp.RLP;
+import net.consensys.cava.rlp.RLPWriter;
 import web3jv.utils.Utils;
 
 import java.math.BigInteger;
+import java.util.List;
 
 /**
  * <p>RLP 인코더.</p>
+ * <p>additional 필드는 이더리움 기본 클라이언트의 트랜젝션 구조에 포함되지 않는,
+ * 별도의 커스텀된 트랜젝션 구성항목을 포함하여 인코딩할때 사용된다. 추가 항목이 없을
+ * 경우엔 <i>null</i> 을 전달해야 한다.</p>
  * @implNote net.consensys.cava 라이브러리 사용
  * @see RlpEncoder#encode()
  * @see web3jv.jsonrpc.transaction.EncoderProvider
@@ -25,6 +30,7 @@ public class RlpEncoder implements EncoderProvider {
     private String v;
     private String r;
     private String s;
+    private List<byte[]> additional;
 
     /**
      * <p>트랜젝션 바디의 각 필드값을 RLP 인코딩 체계로 인코딩한다. 인코딩 하기 전에
@@ -33,17 +39,30 @@ public class RlpEncoder implements EncoderProvider {
      * @since 0.1.0
      */
     public byte[] encode() {
-        return RLP.encodeList(writer -> {
-            writer.writeBigInteger(this.nonce);
-            writer.writeBigInteger(this.gasPrice);
-            writer.writeBigInteger(this.gasLimit);
-            writer.writeByteArray(Utils.toBytes(this.to));
-            writer.writeBigInteger(this.value);
-            writer.writeByteArray(Utils.toBytes(this.data));
-            writer.writeByteArray(Utils.toBytes(this.v));
-            writer.writeByteArray(Utils.toBytes(this.r));
-            writer.writeByteArray(Utils.toBytes(this.s));
-        }).toArray();
+        byte[] result;
+        if (additional != null) {
+            result = RLP.encodeList(writer -> {
+                encodeDefault(writer);
+                this.additional.forEach(a -> writer.writeByteArray(a));
+            }).toArray();
+        } else {
+            result = RLP.encodeList(writer -> encodeDefault(writer))
+                    .toArray();
+        }
+
+        return result;
+    }
+
+    private void encodeDefault(RLPWriter writer) {
+        writer.writeBigInteger(this.nonce);
+        writer.writeBigInteger(this.gasPrice);
+        writer.writeBigInteger(this.gasLimit);
+        writer.writeByteArray(Utils.toBytes(this.to));
+        writer.writeBigInteger(this.value);
+        writer.writeByteArray(Utils.toBytes(this.data));
+        writer.writeByteArray(Utils.toBytes(this.v));
+        writer.writeByteArray(Utils.toBytes(this.r));
+        writer.writeByteArray(Utils.toBytes(this.s));
     }
 
     public void setNonce(BigInteger nonce) {
@@ -81,4 +100,9 @@ public class RlpEncoder implements EncoderProvider {
     public void setS(String s) {
         this.s = s;
     }
+
+    public void setAdditional(List<byte[]> additional) {
+        this.additional = additional;
+    }
+
 }
