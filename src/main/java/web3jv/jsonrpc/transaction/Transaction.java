@@ -113,8 +113,6 @@ public class Transaction {
             EncoderProvider encoder,
             List<byte[]> additional
     ) {
-        ECNamedCurveParameterSpec params = ECNamedCurveTable.getParameterSpec("secp256k1");
-
         setUpEncoder(encoder, additional);
         encoder.setV(this.chainId);
         encoder.setR("");
@@ -124,15 +122,7 @@ public class Transaction {
         BigInteger[] sigs = CryptoUtils.signMessageByECDSA(encoder.encode(), privateKey);
         BigInteger r = sigs[0], s = sigs[1];
 
-        int recId = -1;
-        for (int i = 0; i < 4; i++) {
-            BigInteger k = CryptoUtils.recoverFromSignedMessage(params, messageHash, r, s, i);
-            if (k != null && k.equals(new BigInteger(Wallet.getPublicKey(privateKey), 16))) {
-                recId = i;
-                break;
-            }
-        }
-
+        int recId = CryptoUtils.findV(messageHash, privateKey, r, s);
         String v = Integer.toHexString(recId + (Integer.parseInt(web3jv.getChainId()) * 2) + 35);
         byte[] rBytes = r.toByteArray();
         String stringR = rBytes.length == 32 ? Hex.toHexString(rBytes) : Hex.toHexString(rBytes).substring(2);

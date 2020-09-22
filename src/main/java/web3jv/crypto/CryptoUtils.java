@@ -21,6 +21,7 @@ import web3jv.utils.Utils;
 import web3jv.wallet.Wallet;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 public class CryptoUtils {
@@ -43,6 +44,65 @@ public class CryptoUtils {
         return keccak.digest(input);
     }
 
+    public static BigInteger[] signMessageByECDSA(byte[] targetMessage, String HexPassword) {
+        ECNamedCurveParameterSpec params = ECNamedCurveTable.getParameterSpec("secp256k1");
+        ECDomainParameters domain = new ECDomainParameters(params.getCurve(), params.getG(), params.getN());
+        ECPrivateKeyParameters priKey =
+                new ECPrivateKeyParameters(new BigInteger(HexPassword, 16), domain);
+        ECDSASigner signer = new ECDSASigner(new HMacDSAKCalculator(new SHA256Digest()));
+        signer.init(true, priKey);
+
+        byte[] messageHash = getKeccack256Bytes(targetMessage);
+
+        BigInteger[] sigs = signer.generateSignature(messageHash);
+        BigInteger r = sigs[0], s = sigs[1];
+
+        BigInteger otherS = params.getN().subtract(s);
+        if (s.compareTo(otherS) > 0) {
+            s = otherS;
+        }
+
+        return new BigInteger[] {r, s};
+    }
+
+    public static boolean validateSignECDSA(byte[] messageHash, String address, BigInteger r, BigInteger s) {
+        ECNamedCurveParameterSpec params = ECNamedCurveTable.getParameterSpec("secp256k1");
+        for (int i = 0; i < 4; i++) {
+            BigInteger k = recoverFromSignedMessage(params, messageHash, r, s, i);
+            if (k != null && Wallet.getAddressNo0x(Utils.toHexStringNo0x(k.toByteArray()))
+                    .equals(Utils.generifyAddress(address))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static String signMessageByEthPrefix(String privateKey, String message) {
+        byte[] result = buildEthPrefixMessage(message);
+        byte[] messageHash = CryptoUtils.getKeccack256Bytes(result);
+
+        BigInteger[] sigs = CryptoUtils.signMessageByECDSA(result, privateKey);
+        BigInteger r = sigs[0], s = sigs[1];
+
+        int recId = findV(messageHash, privateKey, r, s);
+        String v = Integer.toHexString(recId + 27);
+        byte[] rBytes = r.toByteArray();
+        String stringR = rBytes.length == 32 ? Hex.toHexString(rBytes) : Hex.toHexString(rBytes).substring(2);
+        String stringS = Hex.toHexString(s.toByteArray());
+
+        return  "0x" + stringR + stringS + v;
+    }
+
+    public static boolean validateEthSign(String message, String address, String signature) {
+        byte[] messageHash = CryptoUtils.getKeccack256Bytes(buildEthPrefixMessage(message));
+        String removed = signature.startsWith("0x") ? signature.substring(2) : signature;
+        String r = removed.substring(0, 64);
+        String s = removed.substring(64, 64 + 64);
+
+        return validateSignECDSA(messageHash, address, new BigInteger(r, 16), new BigInteger(s, 16));
+    }
+
     /**
      * <p>수신한 트랜젝션의 서명을 검증한다.</p>
      * @param receivedTx 수신한 트랜젝션의 객체
@@ -59,8 +119,6 @@ public class CryptoUtils {
             String address,
             String chainId
     ) {
-        ECNamedCurveParameterSpec params = ECNamedCurveTable.getParameterSpec("secp256k1");
-
         encoder.setNonce(receivedTx.getNonce());
         encoder.setGasPrice(receivedTx.getGasPrice());
         encoder.setGasLimit(receivedTx.getGasLimit());
@@ -75,15 +133,7 @@ public class CryptoUtils {
         BigInteger r = new BigInteger(receivedTx.getR(), 16);
         BigInteger s = new BigInteger(receivedTx.getS(), 16);
 
-        for (int i = 0; i < 4; i++) {
-            BigInteger k = recoverFromSignedMessage(params, messageHash, r, s, i);
-            if (k != null && Wallet.getAddressNo0x(Utils.toHexStringNo0x(k.toByteArray()))
-                    .equals(Utils.generifyAddress(address))) {
-                return true;
-            }
-        }
-
-        return false;
+        return validateSignECDSA(messageHash, address, r, s);
     }
 
     /**
@@ -126,28 +176,21 @@ public class CryptoUtils {
         return validateSignedTx(decoder.decode(receivedTx), encoder, address, chainId);
     }
 
-    public static BigInteger[] signMessageByECDSA(byte[] targetMessage, String HexPassword) {
+    public static int findV(byte[] messageHash, String privateKey, BigInteger r, BigInteger s) {
         ECNamedCurveParameterSpec params = ECNamedCurveTable.getParameterSpec("secp256k1");
-        ECDomainParameters domain = new ECDomainParameters(params.getCurve(), params.getG(), params.getN());
-        ECPrivateKeyParameters priKey =
-                new ECPrivateKeyParameters(new BigInteger(HexPassword, 16), domain);
-        ECDSASigner signer = new ECDSASigner(new HMacDSAKCalculator(new SHA256Digest()));
-        signer.init(true, priKey);
-
-        byte[] messageHash = getKeccack256Bytes(targetMessage);
-
-        BigInteger[] sigs = signer.generateSignature(messageHash);
-        BigInteger r = sigs[0], s = sigs[1];
-
-        BigInteger otherS = params.getN().subtract(s);
-        if (s.compareTo(otherS) > 0) {
-            s = otherS;
+        int recId = -1;
+        for (int i = 0; i < 4; i++) {
+            BigInteger k = CryptoUtils.recoverFromSignedMessage(params, messageHash, r, s, i);
+            if (k != null && k.equals(new BigInteger(Wallet.getPublicKey(privateKey), 16))) {
+                recId = i;
+                break;
+            }
         }
 
-        return new BigInteger[] {r, s};
+        return recId;
     }
 
-    public static BigInteger recoverFromSignedMessage(
+    private static BigInteger recoverFromSignedMessage(
             ECNamedCurveParameterSpec params,
             byte[] messageHash,
             BigInteger r,
@@ -182,37 +225,15 @@ public class CryptoUtils {
         return new BigInteger(1, Arrays.copyOfRange(qBytes, 1, qBytes.length));
     }
 
-    public static String signMessageByEthSpec(String privateKey, String message) {
-        ECNamedCurveParameterSpec params = ECNamedCurveTable.getParameterSpec("secp256k1");
+    private static byte[] buildEthPrefixMessage(String message) {
+        byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
+        byte[] prefix = ETHEREUM_SPEC.concat(String.valueOf(messageBytes.length)).getBytes();
 
-        String applied = ETHEREUM_SPEC + message.length() + message;
-        byte[] messageHash = CryptoUtils.getKeccack256Bytes(Utils.toBytes(applied));
+        byte[] result = new byte[prefix.length + messageBytes.length];
+        System.arraycopy(prefix, 0, result, 0, prefix.length);
+        System.arraycopy(messageBytes, 0, result, prefix.length, messageBytes.length);
 
-        BigInteger[] sigs = CryptoUtils.signMessageByECDSA(Utils.toBytes(applied), privateKey);
-        BigInteger r = sigs[0], s = sigs[1];
-
-        BigInteger otherS = params.getN().subtract(s);
-        if (s.compareTo(otherS) > 0) {
-            s = otherS;
-        }
-
-        int recId = -1;
-        for (int i = 0; i < 4; i++) {
-            BigInteger k = CryptoUtils.recoverFromSignedMessage(params, messageHash, r, s, i);
-            if (k != null && k.equals(new BigInteger(Wallet.getPublicKey(privateKey), 16))) {
-                recId = i;
-                break;
-            }
-        }
-
-        String v = Integer.toHexString(recId + 25);
-        byte[] rBytes = r.toByteArray();
-        String stringR = rBytes.length == 32 ? Hex.toHexString(rBytes) : Hex.toHexString(rBytes).substring(2);
-        String stringS = Hex.toHexString(s.toByteArray());
-
-        String signature = stringR + stringS + v;
-
-        return "0x" + signature;
+        return result;
     }
 
 }
