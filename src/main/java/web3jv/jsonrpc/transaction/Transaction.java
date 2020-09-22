@@ -5,6 +5,7 @@ import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.util.encoders.Hex;
 import web3jv.crypto.CryptoUtils;
 import web3jv.jsonrpc.Web3jvProvider;
+import web3jv.utils.Utils;
 import web3jv.wallet.Wallet;
 
 import java.math.BigInteger;
@@ -45,6 +46,7 @@ public class Transaction {
     private String s;
     private String chainId;
     private String from;
+    private byte[] signedTx;
 
     public Transaction() {
     }
@@ -59,18 +61,16 @@ public class Transaction {
     }
 
     /**
-     * <p>트랜젝션 인스턴스를 생성하고 초기화 한다. {@link Transaction#builder()}를 사용할 수 도 있다.
+     * <p>트랜젝션 인스턴스를 생성하고 초기화 한다. 빌더패턴을 사용할 수 도 있다.
      * @param nonce BigInteger 논스
      * @param gasPrice BigInteger 가스가격
      * @param gasLimit BigInteger 가스리미트
      * @param to String('0x' 없는 hex String) 수신주소(토큰일 경우 컨트랙트 주소)
      * @param value BigInteger 수량
      * @param data String 데이터(공백일 경우 "" 입력)
-     * @param r String r값("" 입력)
-     * @param s String s값("" 입력)
      * @param chainId String('0x' 없는 hex String) 체인 식별자(사이닝 전 v 필드에 대입됨)
      * @param from String('0x' 없는 hex String) 송신주소(""입력)
-     *
+     * @see Transaction#builder()
      * @since 0.1.0
      */
     public Transaction(
@@ -80,21 +80,17 @@ public class Transaction {
             String to,
             BigInteger value,
             String data,
-            String r,
-            String s,
             String chainId,
-            String from) {
+            String from
+    ) {
         this.nonce = nonce;
         this.gasPrice = gasPrice;
         this.gasLimit = gasLimit;
-        this.to = to;
+        this.to = Utils.generifyAddress(to);
         this.value = value;
         this.data = data;
-        this.v = chainId;
-        this.r = r;
-        this.s = s;
         this.chainId = chainId;
-        this.from = from;
+        this.from = Utils.generifyAddress(from);
     }
 
     /**
@@ -120,7 +116,11 @@ public class Transaction {
         ECNamedCurveParameterSpec params = ECNamedCurveTable.getParameterSpec("secp256k1");
 
         setUpEncoder(encoder, additional);
+        encoder.setV(this.chainId);
+        encoder.setR("");
+        encoder.setS("");
         byte[] messageHash = CryptoUtils.getKeccack256Bytes(encoder.encode());
+
         BigInteger[] sigs = CryptoUtils.signMessageByECDSA(encoder.encode(), privateKey);
         BigInteger r = sigs[0], s = sigs[1];
 
@@ -133,13 +133,26 @@ public class Transaction {
             }
         }
 
-        this.v = Integer.toHexString(recId + (Integer.parseInt(web3jv.getChainId()) * 2) + 35);
+        String v = Integer.toHexString(recId + (Integer.parseInt(web3jv.getChainId()) * 2) + 35);
         byte[] rBytes = r.toByteArray();
-        this.r = rBytes.length == 32 ? Hex.toHexString(rBytes) : Hex.toHexString(rBytes).substring(2);
-        this.s = Hex.toHexString(s.toByteArray());
-        setUpEncoder(encoder, additional);
+        String stringR = rBytes.length == 32 ? Hex.toHexString(rBytes) : Hex.toHexString(rBytes).substring(2);
+        String stringS = Hex.toHexString(s.toByteArray());
+        this.v = v;
+        this.r = stringR;
+        this.s = stringS;
 
-        return "0x" + Hex.toHexString(encoder.encode());
+        setUpEncoder(encoder, additional);
+        encoder.setV(v);
+        encoder.setR(stringR);
+        encoder.setS(stringS);
+
+        this.signedTx = encoder.encode();
+
+        return "0x" + Utils.toHexStringNo0x(encoder.encode());
+    }
+
+    public String generateTxHash() {
+        return "0x" + CryptoUtils.getKeccack256HexString(this.signedTx);
     }
 
     private void setUpEncoder(EncoderProvider encoder, List<byte[]> additional) {
@@ -149,9 +162,6 @@ public class Transaction {
         encoder.setTo(this.to);
         encoder.setValue(this.value);
         encoder.setData(Optional.ofNullable(this.data).orElse(""));
-        encoder.setV(Optional.ofNullable(this.v).orElse(this.chainId));
-        encoder.setR(Optional.ofNullable(this.r).orElse(""));
-        encoder.setS(Optional.ofNullable(this.s).orElse(""));
         encoder.setAdditional(additional);
     }
 
@@ -185,7 +195,7 @@ public class Transaction {
         }
 
         public Builder to(String hexStringNo0x) {
-            build.to = hexStringNo0x;
+            build.to = Utils.generifyAddress(hexStringNo0x);
             return this;
         }
 
@@ -199,28 +209,13 @@ public class Transaction {
             return this;
         }
 
-        public Builder v(String hexStringNo0x) {
-            build.v = hexStringNo0x;
-            return this;
-        }
-
-        public Builder r(String hexStringNo0x) {
-            build.r = hexStringNo0x;
-            return this;
-        }
-
-        public Builder s(String hexStringNo0x) {
-            build.s = hexStringNo0x;
-            return this;
-        }
-
         public Builder chainId(String hexStringNo0x) {
             build.chainId = hexStringNo0x;
             return this;
         }
 
         public Builder from(String hexStringNo0x) {
-            build.from = hexStringNo0x;
+            build.from = Utils.generifyAddress(hexStringNo0x);
             return this;
         }
 

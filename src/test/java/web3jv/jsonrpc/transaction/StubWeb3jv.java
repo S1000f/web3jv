@@ -3,6 +3,7 @@ package web3jv.jsonrpc.transaction;
 import web3jv.jsonrpc.ChainId;
 import web3jv.jsonrpc.Web3jvProvider;
 
+// Web3jv의 스텁
 public class StubWeb3jv implements Web3jvProvider {
 
     private String endpoint;

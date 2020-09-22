@@ -5,8 +5,7 @@ import java.util.List;
 
 /**
  * <p>트랜젝션 바디를 인코딩 하기위해 사용되는 인코더를 정의한 인터페이스.
- * 트랜젝션을 사이닝하는 {@link Transaction#signRawTransaction} 메소드에 마지막 인자로
- * 전달된다.</p>
+ * 트랜젝션을 사이닝하는 메소드에 마지막 인자로 전달된다.</p>
  * <p>현재 인코딩 방식은 <i>RLP(Recursive Length Prefix)</i>이나, 훗날 변경될 가능성이
  * 있으며(<a href="https://eth.wiki/en/fundamentals/rlp">참조</a>), 이더리움 인코딩 체계가
  * 변경 되거나, 다른 RLP 라이브러리를 적용 혹은 직접 제작할 경우 본 인터페이스를 구현

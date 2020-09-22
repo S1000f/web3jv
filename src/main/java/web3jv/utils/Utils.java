@@ -58,4 +58,8 @@ public class Utils {
     public static byte[] toBytes(String hexStringNo0x) {
         return ByteUtils.fromHexString(hexStringNo0x);
     }
+
+    public static String generifyAddress(String address) {
+        return address.toLowerCase().startsWith("0x") ? address.toLowerCase().substring(2) : address.toLowerCase();
+    }
 }

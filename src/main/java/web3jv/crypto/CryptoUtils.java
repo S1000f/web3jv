@@ -14,6 +14,7 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.custom.sec.SecP256K1Curve;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.encoders.Hex;
+import web3jv.jsonrpc.transaction.DecoderProvider;
 import web3jv.jsonrpc.transaction.EncoderProvider;
 import web3jv.jsonrpc.transaction.Transaction;
 import web3jv.utils.Utils;
@@ -23,6 +24,8 @@ import java.math.BigInteger;
 import java.util.Arrays;
 
 public class CryptoUtils {
+
+    private static final String ETHEREUM_SPEC = "\u0019Ethereum Signed Message:\n";
 
     public static String getKeccack256HexString(String publicKey) {
         Keccak.DigestKeccak keccak = new Keccak.Digest256();
@@ -40,6 +43,16 @@ public class CryptoUtils {
         return keccak.digest(input);
     }
 
+    /**
+     * <p>수신한 트랜젝션의 서명을 검증한다.</p>
+     * @param receivedTx 수신한 트랜젝션의 객체
+     * @param encoder 수신한 트랜젝션에 사용된 인코더 객체 혹은 그 인코딩 체계의 구현체
+     * @param address 검증에 사용 될 송신자 주소. '0x' 여부 상관없이 입력.
+     * @param chainId 사용된 네트워크의 체인아이디
+     * @param <T> extends {@link Transaction}
+     * @return 수신한 트랜젝션이 유효한 서명을 가진경우 참 반환.
+     * @since 0.1.0
+     */
     public static <T extends Transaction> boolean validateSignedTx(
             T receivedTx,
             EncoderProvider encoder,
@@ -62,16 +75,55 @@ public class CryptoUtils {
         BigInteger r = new BigInteger(receivedTx.getR(), 16);
         BigInteger s = new BigInteger(receivedTx.getS(), 16);
 
-        String cutAddress = address.startsWith("0x") ? address.substring(2).toLowerCase() : address.toLowerCase();
         for (int i = 0; i < 4; i++) {
             BigInteger k = recoverFromSignedMessage(params, messageHash, r, s, i);
-            if (k != null &&
-                    Wallet.getAddressNo0x(Utils.toHexStringNo0x(k.toByteArray())).equals(cutAddress)) {
+            if (k != null && Wallet.getAddressNo0x(Utils.toHexStringNo0x(k.toByteArray()))
+                    .equals(Utils.generifyAddress(address))) {
                 return true;
             }
         }
 
         return false;
+    }
+
+    /**
+     * <p>수신한 트랜젝션의 서명을 검증한다.</p>
+     * @param receivedTx 수신한 트랜젝션
+     * @param decoder 수신한 트랜젝션에 사용된 디코더 객체 혹은 그 디코딩 체계의 구현체
+     * @param encoder 수신한 트랜젝션에 사용된 인코더 객체 혹은 그 인코딩 체계의 구현체
+     * @param address 검증에 사용 될 송신자 주소. '0x' 여부 상관없이 입력.
+     * @param chainId 사용된 네트워크의 체인아이디
+     * @return 수신한 트랜젝션이 유효한 서명을 가진경우 참 반환.
+     * @since 0.1.0
+     */
+    public static boolean validateSignedTx(
+            byte[] receivedTx,
+            DecoderProvider decoder,
+            EncoderProvider encoder,
+            String address,
+            String chainId
+    ) {
+        return validateSignedTx(decoder.decode(receivedTx), encoder, address, chainId);
+    }
+
+    /**
+     * <p>수신한 트랜젝션의 서명을 검증한다.</p>
+     * @param receivedTx 수신한 트랜젝션
+     * @param decoder 수신한 트랜젝션에 사용된 디코더 객체 혹은 그 디코딩 체계의 구현체
+     * @param encoder 수신한 트랜젝션에 사용된 인코더 객체 혹은 그 인코딩 체계의 구현체
+     * @param address 검증에 사용 될 송신자 주소. '0x' 여부 상관없이 입력.
+     * @param chainId 사용된 네트워크의 체인아이디
+     * @return 수신한 트랜젝션이 유효한 서명을 가진경우 참 반환.
+     * @since 0.1.0
+     */
+    public static boolean validateSignedTx(
+            String receivedTx,
+            DecoderProvider decoder,
+            EncoderProvider encoder,
+            String address,
+            String chainId
+    ) {
+        return validateSignedTx(decoder.decode(receivedTx), encoder, address, chainId);
     }
 
     public static BigInteger[] signMessageByECDSA(byte[] targetMessage, String HexPassword) {
@@ -128,6 +180,39 @@ public class CryptoUtils {
         byte[] qBytes = q.getEncoded(false);
 
         return new BigInteger(1, Arrays.copyOfRange(qBytes, 1, qBytes.length));
+    }
+
+    public static String signMessageByEthSpec(String privateKey, String message) {
+        ECNamedCurveParameterSpec params = ECNamedCurveTable.getParameterSpec("secp256k1");
+
+        String applied = ETHEREUM_SPEC + message.length() + message;
+        byte[] messageHash = CryptoUtils.getKeccack256Bytes(Utils.toBytes(applied));
+
+        BigInteger[] sigs = CryptoUtils.signMessageByECDSA(Utils.toBytes(applied), privateKey);
+        BigInteger r = sigs[0], s = sigs[1];
+
+        BigInteger otherS = params.getN().subtract(s);
+        if (s.compareTo(otherS) > 0) {
+            s = otherS;
+        }
+
+        int recId = -1;
+        for (int i = 0; i < 4; i++) {
+            BigInteger k = CryptoUtils.recoverFromSignedMessage(params, messageHash, r, s, i);
+            if (k != null && k.equals(new BigInteger(Wallet.getPublicKey(privateKey), 16))) {
+                recId = i;
+                break;
+            }
+        }
+
+        String v = Integer.toHexString(recId + 25);
+        byte[] rBytes = r.toByteArray();
+        String stringR = rBytes.length == 32 ? Hex.toHexString(rBytes) : Hex.toHexString(rBytes).substring(2);
+        String stringS = Hex.toHexString(s.toByteArray());
+
+        String signature = stringR + stringS + v;
+
+        return "0x" + signature;
     }
 
 }

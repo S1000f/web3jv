@@ -54,7 +54,7 @@ public class Wallet {
         return "0x" + getAddressNo0x(pubKey);
     }
 
-    public static String getAddressFromPrivateKey(String privateKey) {
+    public static String getAddress0xFromPrivateKey(String privateKey) {
         return getAddress0x(getPublicKey(privateKey));
     }
 
@@ -127,7 +127,7 @@ public class Wallet {
         return buildWalletFile(privateKey, salt, iv, cipherText, mac, n, p);
     }
 
-    public static String decrypt(String password, WalletFile walletFile) throws CipherSupportedException {
+    public static String decryptWalletFile(String password, WalletFile walletFile) throws CipherSupportedException {
         WalletFile.Crypto crypto = walletFile.getCrypto();
         byte[] mac = Utils.toBytes(crypto.getMac());
         byte[] iv = Utils.toBytes(crypto.getCipherparams().getIv());

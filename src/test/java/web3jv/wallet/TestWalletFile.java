@@ -34,7 +34,7 @@ public class TestWalletFile {
     @Test
     public void decryptWalletFileThenGetPrivateKey() throws InterruptedException, CipherSupportedException {
         WalletFile file = Wallet.generateWalletFile(password, privateKey);
-        String recoveredPriKey = Wallet.decrypt(password, file);
+        String recoveredPriKey = Wallet.decryptWalletFile(password, file);
 
         assertEquals(privateKey, recoveredPriKey);
     }

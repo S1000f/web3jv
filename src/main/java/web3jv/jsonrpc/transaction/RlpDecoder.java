@@ -4,8 +4,8 @@ import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.rlp.RLP;
 import web3jv.utils.Utils;
 
-public class RlpDecoder {
-    public static Transaction decoder(byte[] receivedTx) {
+public class RlpDecoder implements DecoderProvider {
+    public Transaction decode(byte[] receivedTx) {
         Bytes wrapped = Bytes.wrap(receivedTx);
         Transaction transaction = new Transaction();
 
@@ -23,8 +23,8 @@ public class RlpDecoder {
         });
     }
 
-    public static Transaction decoder(String receivedTx) {
+    public Transaction decode(String receivedTx) {
         String cut = receivedTx.startsWith("0x") ? receivedTx.substring(2) : receivedTx;
-        return decoder(Utils.toBytes(cut));
+        return decode(Utils.toBytes(cut));
     }
 }

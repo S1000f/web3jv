@@ -1,17 +1,28 @@
 package web3jv.jsonrpc;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import web3jv.jsonrpc.transaction.EncoderProvider;
+import web3jv.jsonrpc.transaction.RlpEncoder;
+import web3jv.jsonrpc.transaction.Transaction;
+import web3jv.utils.EtherUnit;
+import web3jv.utils.Utils;
 
 import java.io.IOException;
 import java.math.BigInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static web3jv.utils.Utils.toHexStringNo0x;
 
 public class TestWeb3jv {
 
     private Web3jv web3jv;
-    private String sampleAddress1;
+    private String samplePriKey;
+    private String sampleAddressFrom;
+    private String sampleAddressTo;
+    private EncoderProvider encoder;
 
     /**
      * JSON-RPC 목 객체가 아직 구현전이므로,
@@ -20,7 +31,10 @@ public class TestWeb3jv {
     @BeforeEach
     public void setUp() {
         web3jv = new Web3jv("https://ropsten.infura.io/v3/ff7a2a6b2e054541a1b4bffe4c58bd11");
-        sampleAddress1 = "0xa11CB28A6066684DB968075101031d3151dC40ED";
+        samplePriKey = "28e0af3f15316ffb692fb4c73bf54d2d0eada493204b9a4cb7e2d10812e4a73e";
+        sampleAddressFrom = "0xAAA4d18979F2d3A52c426574Ed5b444a8E496A5d";
+        sampleAddressTo = "0x7b74C763119a062A52AEf110e949542f838bB660";
+        encoder = new RlpEncoder();
     }
 
     @Test
@@ -33,7 +47,31 @@ public class TestWeb3jv {
 
     @Test
     public void getGasLimitTest() throws IOException {
-        BigInteger result = web3jv.ethEstimateGas(sampleAddress1);
+        BigInteger result = web3jv.ethEstimateGas(sampleAddressFrom);
         assertEquals(new BigInteger("21000"), result);
+    }
+
+    @Disabled
+    @DisplayName("트랜젝션 해시값이 올바르게 만들어진다")
+    @Test
+    public void ethSendRawTransactionTest() throws IOException {
+        Transaction transaction = getSampleTransaction();
+        String signedTx = transaction.signRawTransaction(web3jv, samplePriKey, encoder, null);
+
+        String txHash = transaction.generateTxHash();
+        String result = web3jv.ethSendRawTransaction(signedTx);
+
+        assertEquals(result, txHash);
+    }
+
+    private Transaction getSampleTransaction() throws IOException {
+        return Transaction.builder()
+                .nonce(web3jv.ethGetTransactionCount(sampleAddressFrom))
+                .gasPrice(web3jv.ethGasPrice())
+                .gasLimit(new BigInteger("21000"))
+                .to(sampleAddressTo)
+                .value(Utils.toWeiBigDecimal("0.01", EtherUnit.ETHER).toBigInteger())
+                .chainId(toHexStringNo0x(web3jv.getChainId()))
+                .build();
     }
 }
