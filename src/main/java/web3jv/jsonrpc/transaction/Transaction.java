@@ -1,12 +1,9 @@
 package web3jv.jsonrpc.transaction;
 
-import org.bouncycastle.jce.ECNamedCurveTable;
-import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.util.encoders.Hex;
 import web3jv.crypto.CryptoUtils;
 import web3jv.jsonrpc.Web3jvProvider;
 import web3jv.utils.Utils;
-import web3jv.wallet.Wallet;
 
 import java.math.BigInteger;
 import java.util.List;

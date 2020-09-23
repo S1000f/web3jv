@@ -91,7 +91,7 @@ public class Wallet {
         return "0x" + String.valueOf(subject);
     }
 
-    public static WalletFile generateWalletFile(String password, String privateKey) throws InterruptedException {
+    public static WalletFile generateWalletFile(String password, String privateKey) {
         /* Derived Key(파생 키)
         * 비밀번호를 솔트와 n, p, r 을 이용하여 Scrypt 방법으로 암호화 하여 파생키를 생성함
         * salt : 암호를 강화하기 위한 무작위의 난수집합
@@ -100,7 +100,7 @@ public class Wallet {
         * p :
         * DERIVED_KEY_LENGTH : 파생키의 길이 지정
         * */
-        byte[] salt = new BigInteger(generateSalt(64), 16).toByteArray();
+        byte[] salt = Utils.toBytes(generateRandomHexStringNo0x(64));
         int n = n_4096;
         int r = R;
         int p = P;
@@ -110,13 +110,8 @@ public class Wallet {
         /* CipherText
         * 개인키를 iv 와 aes_ctr_encrypt 함수를 사용하여 암호화
         * */
-        byte[] iv = new BigInteger(generateIv(32), 16).toByteArray();
+        byte[] iv = Utils.toBytes(generateRandomHexStringNo0x(32));
         byte[] cipherText = generateCipherText(1, iv, derivedKey, Utils.toBytes(privateKey));
-        while (cipherText.length == 0) {
-            Thread.sleep(10L);
-            iv = new BigInteger(generateIv(32), 16).toByteArray();
-            cipherText = generateCipherText(1, iv, derivedKey, Utils.toBytes(privateKey));
-        }
 
         /* mac(Message authentication code)
         * 암호화된 대상(메시지)이 유효한지 확인하고 복호화 할때 필요함
@@ -158,13 +153,6 @@ public class Wallet {
         }
     }
 
-    private static byte[] generateMac(byte[] derivedKey, byte[] cipherText) {
-        byte[] result = new byte[16 + cipherText.length];
-        System.arraycopy(derivedKey, 16, result, 0, 16);
-        System.arraycopy(cipherText, 0, result, 16, cipherText.length);
-        return CryptoUtils.getKeccack256Bytes(result);
-    }
-
     private static byte[] generateDerivedKey(String password, byte[] salt, int n, int r, int p, int dklen) {
         return SCrypt.generate(new BigInteger(password, 10).toByteArray(), salt, n, r, p, dklen);
     }
@@ -184,6 +172,14 @@ public class Wallet {
         }
 
         return cipherText;
+    }
+
+    private static byte[] generateMac(byte[] derivedKey, byte[] cipherText) {
+        byte[] result = new byte[16 + cipherText.length];
+        System.arraycopy(derivedKey, 16, result, 0, 16);
+        System.arraycopy(cipherText, 0, result, 16, cipherText.length);
+
+        return CryptoUtils.getKeccack256Bytes(result);
     }
 
     private static WalletFile buildWalletFile(
@@ -223,26 +219,6 @@ public class Wallet {
         walletFile.setCrypto(crypto);
 
         return walletFile;
-    }
-
-    private static String generateIv(int length) {
-        SecureRandom random = new SecureRandom();
-        StringBuilder privateKey = new StringBuilder();
-        for (int i = 0; i < length; i++) {
-            privateKey.append(Integer.toHexString(random.nextInt(16)));
-        }
-
-        return privateKey.toString();
-    }
-
-    private static String generateSalt(int length) {
-        SecureRandom random = new SecureRandom();
-        StringBuilder privateKey = new StringBuilder();
-        for (int i = 0; i < length; i++) {
-            privateKey.append(Integer.toHexString(random.nextInt(16)));
-        }
-
-        return privateKey.toString();
     }
 
     private static String generateRandomHexStringNo0x(int length) {

@@ -22,7 +22,7 @@ public class TestWalletFile {
 
     @DisplayName("ciphertext 가 정상적으로 생성된다")
     @Test
-    public void createWalletFileTest() throws InterruptedException {
+    public void createWalletFileTest() {
         WalletFile file = Wallet.generateWalletFile(password, privateKey);
         WalletFile.Crypto crypto = file.getCrypto();
 
@@ -32,7 +32,7 @@ public class TestWalletFile {
 
     @DisplayName("비밀번호와 키스토어 파일이 있다면 비밀키를 복호화 할 수 있다")
     @Test
-    public void decryptWalletFileThenGetPrivateKey() throws InterruptedException, CipherSupportedException {
+    public void decryptWalletFileThenGetPrivateKey() throws CipherSupportedException {
         WalletFile file = Wallet.generateWalletFile(password, privateKey);
         String recoveredPriKey = Wallet.decryptWalletFile(password, file);
 

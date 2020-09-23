@@ -44,11 +44,11 @@ public class CryptoUtils {
         return keccak.digest(input);
     }
 
-    public static BigInteger[] signMessageByECDSA(byte[] targetMessage, String HexPassword) {
+    public static BigInteger[] signMessageByECDSA(byte[] targetMessage, String hexPassword) {
         ECNamedCurveParameterSpec params = ECNamedCurveTable.getParameterSpec("secp256k1");
         ECDomainParameters domain = new ECDomainParameters(params.getCurve(), params.getG(), params.getN());
         ECPrivateKeyParameters priKey =
-                new ECPrivateKeyParameters(new BigInteger(HexPassword, 16), domain);
+                new ECPrivateKeyParameters(new BigInteger(hexPassword, 16), domain);
         ECDSASigner signer = new ECDSASigner(new HMacDSAKCalculator(new SHA256Digest()));
         signer.init(true, priKey);
 
@@ -235,6 +235,5 @@ public class CryptoUtils {
 
         return result;
     }
-
 }
 
