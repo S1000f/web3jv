@@ -14,6 +14,9 @@ import org.bouncycastle.jcajce.provider.digest.SHA512;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,22 +25,21 @@ import web3jv.jsonrpc.Web3jvProvider;
 import web3jv.jsonrpc.transaction.*;
 import web3jv.utils.EtherUnit;
 import web3jv.utils.Utils;
+import web3jv.wallet.CipherSupportedException;
 import web3jv.wallet.Wallet;
+import web3jv.wallet.WalletFile;
 
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.SecretKeyFactory;
+import javax.crypto.*;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
+import java.security.*;
 import java.security.spec.KeySpec;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -139,109 +141,75 @@ public class TestCryptoUtils {
     }
 
     @Test
-    public void whatthehellamidoing() throws NoSuchAlgorithmException {
+    public void whatthehellamidoing() throws Exception {
+
         String message = "hello world";
         byte[] byteMessage = message.getBytes(StandardCharsets.UTF_8);
-        String receiversPubKey = "0465ca5e4ac66d894363e659af4bd79c99cae777f023d117e3af3b8609ba37948fb0abd858c068de4" +
-                "1a67b016f22b2a013133bf7ba5a15fb3641e8248b0245364f";
-        String privateKey = "024c3c5d58f1a178235761190339663cb51787684af9b2dd659047d7da276a05";
+        String receiversPubKey = "0465ca5e4ac66d894363e659af4bd79c99cae777f023d117e3af3b8609ba37948fb0abd858c068de41a67b016f22b2a013133bf7ba5a15fb3641e8248b0245364f";
+        String privateKey = "6a3f3fe8bf03f97d834bf30baa1142f384162f2636e4389c52e1ee3bfec75697";
+        String myPublicKey = Wallet.getPublicKey(privateKey);
+        String sampleIv = "42f5c934c04b1cc9b9225c084d002a68";
 
+        byte[] ecdhkey = deriveECDHKeyAgreement(privateKey, receiversPubKey);
 
-        byte[] derived = deriveECDHKeyAgreement(privateKey, receiversPubKey);
+        byte[] cutEdch = Arrays.copyOfRange(ecdhkey, ecdhkey.length - 32, ecdhkey.length);
 
-        X9ECParameters params = SECNamedCurves.getByName("secp256k1");
-        ECDomainParameters domain = new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH());
-
-        ECPrivateKeyParameters privKeyP =
-                new ECPrivateKeyParameters(new BigInteger(derived, 16), domain);
-
-        ECPoint q = domain.getCurve().decodePoint(Utils.toBytes(receiversPubKey));
-        ECPublicKeyParameters pubKeyP = new ECPublicKeyParameters(q, domain);
-
-        ECDSASigner signer = new ECDSASigner(new HMacDSAKCalculator(new SHA256Digest()));
-
-        ECDHBasicAgreement agreement = new ECDHBasicAgreement();
-        agreement.init(privKeyP);
-        BigInteger ecdhKey = agreement.calculateAgreement(pubKeyP);
-
-//        byte[] hashed = getSha2bit512Atype(ecdhKey);
-        byte[] hashed = getSha2bit512Btype(ecdhKey.toByteArray());
-
-        String hexEcdh = Utils.toHexStringNo0x(hashed);
-        System.out.println("hexString ECDH : " + hexEcdh);
+        byte[] hashed = getSha2bit512(cutEdch);
 
         byte[] ecdhPriKey = new byte[hashed.length / 2];
         byte[] keyForMac = new byte[hashed.length / 2];
         System.arraycopy(hashed, 0, ecdhPriKey, 0, ecdhPriKey.length);
         System.arraycopy(hashed, ecdhPriKey.length, keyForMac, 0, keyForMac.length);
 
-        System.out.println("edchPriKey : " + Utils.toHexStringNo0x(ecdhPriKey));
-        System.out.println("mac key : " + Utils.toHexStringNo0x(keyForMac));
+        byte[] iv = Utils.toBytes(generateRandomHexStringNo0x(32));
+        byte[] cipherText = getCiphertextAES256CBC(Cipher.ENCRYPT_MODE, iv, ecdhPriKey, byteMessage);
 
-        byte[] cipherText = getCiphertextAES256CBC(ecdhPriKey, byteMessage);
-        System.out.println("ciphertext : " + Utils.toHexStringNo0x(cipherText));
+        byte[] sampleIvBytes = Utils.toBytes(sampleIv);
+        byte[] ephemPubKey = Utils.toBytes(myPublicKey);
 
+        int ivLength = sampleIvBytes.length;
+        int ePubKeyLength = ephemPubKey.length;
+        int cipherTextLength = cipherText.length;
+        byte[] dataToMac = new byte[ivLength + ePubKeyLength + cipherTextLength];
+        System.arraycopy(sampleIvBytes, 0, dataToMac, 0, ivLength);
+        System.arraycopy(ephemPubKey, 0, dataToMac, ivLength, ePubKeyLength);
+        System.arraycopy(cipherText, 0, dataToMac, ivLength + ePubKeyLength, cipherTextLength);
 
+        byte[] mac = generateHmacSHA256(keyForMac, dataToMac);
 
+        System.out.println(Utils.toHexStringNo0x(mac));
 
-
-
-        byte[] mac = new byte[16 + cipherText.length];
-        System.arraycopy(Utils.toBytes("04" + Wallet.getPublicKey(privateKey)), 16, mac, 0, 16);
-        System.arraycopy(cipherText, 0, mac, 16, cipherText.length);
-
-        System.out.println("mac : " + Utils.toHexStringNo0x(mac));
     }
 
-    public static byte[] getSha2bit512Atype(BigInteger ecdh) {
+    public static byte[] getSha2bit512(BigInteger ecdh) {
         SHA512.Digest digest = new SHA512.Digest();
         return digest.digest(ecdh.toByteArray());
     }
 
-    public static byte[] getSha2bit512Btype(byte[] ecdh) throws NoSuchAlgorithmException {
-        MessageDigest digest = MessageDigest.getInstance("SHA-512/256");
-        digest.update(ecdh);
+    public static byte[] getSha2bit512(byte[] ecdh) {
+        SHA512.Digest digest = new SHA512.Digest();
         return digest.digest(ecdh);
     }
 
-    public static byte[] getCiphertextAES256CBC(byte[] ecdhPriKey, byte[] target) {
-        try {
+    public static byte[] getCiphertextAES256CBC(int mode, byte[] iv, byte[] ecdhPriKey, byte[] target) throws Exception {
+        SecretKeySpec secretKeySpec = new SecretKeySpec(ecdhPriKey, "AES");
+        IvParameterSpec ivSpec = new IvParameterSpec(iv);
 
-//            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256");
-//            KeySpec spec = new PBEKeySpec(secretKey.toCharArray(), salt.getBytes(), 65536, 256);
-//
-//            SecretKey tmp = factory.generateSecret(spec);
-//            SecretKeySpec secretKey = new SecretKeySpec(tmp.getEncoded(), "AES");
+        Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+        cipher.init(mode, secretKeySpec, ivSpec);
 
-            SecretKeySpec secretKeySpec =
-                    new SecretKeySpec(Arrays.copyOfRange(ecdhPriKey, 0, 16), "AES");
+        return cipher.doFinal(target);
 
-            byte[] iv = Utils.toBytes(generateRandomHexStringNo0x(32));
-            String sampleIv = "24210c037fb76e413fe8f938f46607c8";
-            IvParameterSpec ivSpec = new IvParameterSpec(Utils.toBytes(sampleIv));
-
-            Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-            cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec, ivSpec);
-
-            return cipher.doFinal(target);
-        }
-        catch (Exception e) {
-            System.out.println("Error while encrypting: " + e.toString());
-        }
-        return null;
     }
 
     public static byte[] deriveECDHKeyAgreement(String srcPrivKey, String destPubKey) {
         X9ECParameters params = SECNamedCurves.getByName("secp256k1");
-        ECDomainParameters domain = new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH());
+        ECDomainParameters domain =
+                new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH());
 
         ECPoint pudDestPoint = domain.getCurve().decodePoint(Utils.toBytes(destPubKey));
         ECPoint mult = pudDestPoint.multiply(new BigInteger(srcPrivKey, 16));
         return mult.getEncoded(true);
-    }
-
-    private static byte[] generateDerivedKey(String password, byte[] salt, int n, int r, int p, int dklen) {
-        return SCrypt.generate(new BigInteger(password, 10).toByteArray(), salt, n, r, p, dklen);
     }
 
     private static byte[] generateCipherText(int mode, byte[] iv, byte[] derivedKey, byte[] target) {
@@ -261,12 +229,74 @@ public class TestCryptoUtils {
         return cipherText;
     }
 
-    private static byte[] generateMac(byte[] derivedKey, byte[] cipherText) {
-        byte[] result = new byte[16 + cipherText.length];
-        System.arraycopy(derivedKey, 16, result, 0, 16);
-        System.arraycopy(cipherText, 0, result, 16, cipherText.length);
+    private static byte[] generateHmacSHA256(byte[] macKey, byte[] dataToMac) throws NoSuchAlgorithmException, InvalidKeyException {
+        Mac hmac = Mac.getInstance("HmacSHA256");
+        SecretKeySpec secretKeySpec = new SecretKeySpec(macKey, "AES");
+        hmac.init(secretKeySpec);
 
-        return CryptoUtils.getKeccack256Bytes(result);
+        return hmac.doFinal(dataToMac);
+    }
+
+    @Test
+    public void main() throws Exception {
+        String message = "hello world";
+        byte[] byteMessage = message.getBytes(StandardCharsets.UTF_8);
+        String BPrivKey = "97e416370613ca532c97bd84e4cc1d9aeb5d1e8e22cd6b660df3fa5823acfc71";
+        String APubKey = "041fd27f330f0a0d1caeb87ffd0bd29822c245206d5aefd2e87d8dad75cca79a7ea878c8c70ec83438370b4d4f4d472eb677620a3bd6fb45cc7d98d6dda37e1cca";
+        String cipherText = "bda131d7b04b644dfb3a2ef5816e4618";
+        byte[] cipherByte = Utils.toBytes(cipherText);
+        String iv = "42f5c934c04b1cc9b9225c084d002a68";
+        byte[] ivByte = Utils.toBytes(iv);
+        String receivedMac = "90207c3723922edaf3c3c8b6433f8fc41c5cc7d253231e5ab949db4de98e5ba9";
+        byte[] macBytes = Utils.toBytes(receivedMac);
+
+        String decryptResult = decrypt1111(BPrivKey, APubKey, cipherByte, ivByte, macBytes);
+        System.out.println(decryptResult);
+        System.out.println(Utils.toHexStringNo0x(byteMessage));
+
+    }
+
+    public static String decrypt1111(String srcPrivKey, String destPubKey, byte[] cipherText, byte[] iv, byte[] givenMac) throws Exception {
+
+        byte[] derivedECDHKey = deriveECDHKeyAgreement(srcPrivKey, destPubKey);
+        byte[] cutEdch = Arrays.copyOfRange(derivedECDHKey, derivedECDHKey.length - 32, derivedECDHKey.length);
+
+        byte[] hashed = getSha2bit512(cutEdch);
+
+        byte[] ecdhPriKey = new byte[hashed.length / 2];
+        byte[] keyForMac = new byte[hashed.length / 2];
+        System.arraycopy(hashed, 0, ecdhPriKey, 0, ecdhPriKey.length);
+        System.arraycopy(hashed, ecdhPriKey.length, keyForMac, 0, keyForMac.length);
+
+
+        int ivLength = iv.length;
+        String ephemPubKey = Wallet.getPublicKey(srcPrivKey);
+        byte[] ePubKeyByte = Utils.toBytes(destPubKey);
+        int ePubKeyLength = ePubKeyByte.length;
+        int cipherTextLength = cipherText.length;
+        System.out.println(ephemPubKey);
+
+        byte[] dataToMac = new byte[ivLength + ePubKeyLength + cipherTextLength];
+        System.arraycopy(iv, 0, dataToMac, 0, ivLength);
+        System.arraycopy(ePubKeyByte, 0, dataToMac, ivLength, ePubKeyLength);
+        System.arraycopy(cipherText, 0, dataToMac, ivLength + ePubKeyLength, cipherTextLength);
+        System.out.println("dataToMac : " + Utils.toHexStringNo0x(dataToMac));
+
+        byte[] derivedMac = generateHmacSHA256(keyForMac, dataToMac);
+
+        System.out.println(Utils.toHexStringNo0x(givenMac));
+        System.out.println(Utils.toHexStringNo0x(derivedMac));
+
+        if (! Utils.toHexStringNo0x(givenMac).equals(Utils.toHexStringNo0x(derivedMac))) {
+            throw new CipherSupportedException("Invalid password provided");
+        } else {
+            byte[] privateKey = getCiphertextAES256CBC(Cipher.DECRYPT_MODE, iv, ecdhPriKey, cipherText);
+            return Utils.toHexStringNo0x(privateKey);
+        }
+    }
+
+    private static byte[] generateDerivedKey(String password, byte[] salt, int n, int r, int p, int dklen) {
+        return SCrypt.generate(new BigInteger(password, 10).toByteArray(), salt, n, r, p, dklen);
     }
 
     private static String generateRandomHexStringNo0x(int length) {
@@ -278,8 +308,6 @@ public class TestCryptoUtils {
 
         return privateKey.toString();
     }
-
-
 
     private String getSampleSignedTxNo1() {
         Transaction transaction = Transaction.builder()

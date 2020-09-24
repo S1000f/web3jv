@@ -42,7 +42,7 @@ public class Wallet {
         ECNamedCurveParameterSpec params = ECNamedCurveTable.getParameterSpec("secp256k1");
         ECPoint pointQ = params.getG().multiply(new BigInteger(priByte));
 
-        return Hex.toHexString(pointQ.getEncoded(false)).substring(2);
+        return Hex.toHexString(pointQ.getEncoded(false));
     }
 
     public static String getAddressNo0x(String pubKey) {

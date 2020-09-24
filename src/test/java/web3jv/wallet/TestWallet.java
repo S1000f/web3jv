@@ -14,7 +14,7 @@ public class TestWallet {
         String SamplePriKey = "18dd1dcd752466afa3d1fac1424333c6461c3a0f1d6702e9c45bc9254ec74e5f";
         String result = Wallet.getPublicKey(SamplePriKey);
 
-        assertEquals("bdfb71e2d953406c45279ac434667a6a1ea9fae608af91e7f6bfb0792011df760895a528e8b8362288" +
+        assertEquals("04bdfb71e2d953406c45279ac434667a6a1ea9fae608af91e7f6bfb0792011df760895a528e8b8362288" +
                 "6039b4803b6182d708fb40a16919bddaef84493ef1d4cf", result);
     }
 
@@ -24,7 +24,7 @@ public class TestWallet {
         String privateKey = "ff4a5c68bd14cc1bb762274a18b3777bd049456f73c8dd0a0df0cd80bec1812f";
         String derived = "0x4038aa65ab984c1816c0e27c54da14ac21e93643";
         String expected = derived.toLowerCase();
-        String address = Wallet.getAddress0x(Wallet.getPublicKey(privateKey));
+        String address = Wallet.getAddress0x(Wallet.getPublicKey(privateKey).substring(2));
 
         assertEquals(expected, address);
     }
