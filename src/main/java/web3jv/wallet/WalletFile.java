@@ -1,5 +1,15 @@
 package web3jv.wallet;
 
+/**
+ * <p>Keystore 저장 객체. 버전 3. <i>{@code id} 필드와 {@code Crypto.cipherText}</i> 는
+ * 같은 개인키를 담고있더라도 생성시 마다 그 값이 달라지므로, 키스토어간의 비교에
+ * 적합하지 않음에 유의.
+ * 키스토어 파일간의 동등비교는 오버라이딩된 {@code hashCode()} 나 {@code equals}
+ * 을 사용한다.</p>
+ * @since 0.1.0
+ * @author 김도협(닉)
+ * @version 0.1.0
+ */
 public class WalletFile {
 
     private String address;

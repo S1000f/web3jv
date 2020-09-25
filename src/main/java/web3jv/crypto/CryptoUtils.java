@@ -17,6 +17,7 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.custom.sec.SecP256K1Curve;
 import org.bouncycastle.pqc.math.linearalgebra.ByteUtils;
 import org.bouncycastle.util.encoders.Hex;
+import web3jv.jsonrpc.Web3jvProvider;
 import web3jv.jsonrpc.transaction.DecoderProvider;
 import web3jv.jsonrpc.transaction.EncoderProvider;
 import web3jv.jsonrpc.transaction.Transaction;
@@ -36,35 +37,79 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * <p>암호화와 관련된 유틸리티 메소드 모음. 전역 메소드로 구성되어 있음.</p>
+ * @author 김도협(닉)
+ * @version 0.1.0
+ * @since 0.1.0
+ */
 public class CryptoUtils {
 
     private static final String ETHEREUM_SPEC = "\u0019Ethereum Signed Message:\n";
 
-    public static String getKeccack256HexString(String publicKey) {
+    /**
+     * <p>Keccak256 해시 함수.</p>
+     * @param target 해싱 할 대상
+     * @return 해시 값
+     * @since 0.1.0
+     */
+    public static String getKeccack256HexString(String target) {
         Keccak.DigestKeccak keccak = new Keccak.Digest256();
-        byte[] bytes = ByteUtils.fromHexString(publicKey); // keccak = 제로패딩 없어야 함
+        byte[] bytes = ByteUtils.fromHexString(target); // keccak = 제로패딩 없어야 함
 
         return Hex.toHexString(keccak.digest(bytes));
     }
 
-    public static String getKeccack256HexString(byte[] input) {
-        return Hex.toHexString(getKeccack256Bytes(input));
+    /**
+     * <p>Keccak256 해시 함수.</p>
+     * @param target 해싱 할 대상
+     * @return 해시 값
+     * @since 0.1.0
+     */
+    public static String getKeccack256HexString(byte[] target) {
+        return Hex.toHexString(getKeccack256Bytes(target));
     }
 
-    public static byte[] getKeccack256Bytes(byte[] input) {
+    /**
+     * <p>Keccak256 해시 함수.</p>
+     * @param target 해싱 할 대상
+     * @return 해시 값
+     * @since 0.1.0
+     */
+    public static byte[] getKeccack256Bytes(byte[] target) {
         Keccak.DigestKeccak keccak = new Keccak.Digest256();
-        return keccak.digest(input);
+        return keccak.digest(target);
     }
 
-    public static byte[] getSha2bit512(byte[] ecdh) {
+    /**
+     * <p>SHA2-512 해시 함수</p>
+     * @param target 해싱할 대상
+     * @return 해시 값
+     * @since 0.1.0
+     */
+    public static byte[] getSha2bit512(byte[] target) {
         SHA512.Digest digest = new SHA512.Digest();
-        return digest.digest(ecdh);
+        return digest.digest(target);
     }
 
-    public static byte[] getSha2bit512(BigInteger ecdh) {
-        return getSha2bit512(ecdh.toByteArray());
+    /**
+     * <p>SHA2-512 해시 함수</p>
+     * @param target 해싱할 대상
+     * @return 해시 값
+     * @since 0.1.0
+     */
+    public static byte[] getSha2bit512(BigInteger target) {
+        return getSha2bit512(target.toByteArray());
     }
 
+    /**
+     * <p>ECDSA 기반 서명을 수행한다.</p>
+     * @param targetMessage 서명할 메시지
+     * @param hexPassword 비밀번호 혹은 비밀키
+     * @return 서명값 배열 {BigInteger r, BigInteger s}
+     * @see CryptoUtils#validateSignECDSA(byte[], String, BigInteger, BigInteger)
+     * @since 0.1.0
+     */
     public static BigInteger[] signMessageByECDSA(byte[] targetMessage, String hexPassword) {
         ECNamedCurveParameterSpec params = ECNamedCurveTable.getParameterSpec("secp256k1");
         ECDomainParameters domain = new ECDomainParameters(params.getCurve(), params.getG(), params.getN());
@@ -86,6 +131,16 @@ public class CryptoUtils {
         return new BigInteger[] {r, s};
     }
 
+    /**
+     * <p>ECDSA 서명을 검증한다.</p>
+     * @param messageHash 수신한 메시지
+     * @param address 송신자 주소
+     * @param r 타원곡선 곱연산 r 값
+     * @param s 타원곡선 곱연산 s 값
+     * @return 서명이 올바르면 참을 반환한다.
+     * @see CryptoUtils#signMessageByECDSA(byte[], String)
+     * @since 0.1.0
+     */
     public static boolean validateSignECDSA(byte[] messageHash, String address, BigInteger r, BigInteger s) {
         ECNamedCurveParameterSpec params = ECNamedCurveTable.getParameterSpec("secp256k1");
         for (int i = 0; i < 4; i++) {
@@ -99,6 +154,18 @@ public class CryptoUtils {
         return false;
     }
 
+    /**
+     * <p>이더리움 표준 메시지 사이닝을 수행한다. 이더리움 표준 접두어:
+     * <pre>
+     *     {@value \u0019Ethereum Signed Message:\n}
+     * </pre></p>
+     * @param privateKey 비밀키
+     * @param message 사이닝할 메시지
+     * @return 서명 값 ("0x" + r + s + v)
+     * @see CryptoUtils#validateEthSign(String, String, String)
+     * @see CryptoUtils#signMessageByECDSA(byte[], String)
+     * @since 0.1.0
+     */
     public static String signMessageByEthPrefix(String privateKey, String message) {
         byte[] result = buildEthPrefixMessage(message);
         byte[] messageHash = CryptoUtils.getKeccack256Bytes(result);
@@ -115,6 +182,16 @@ public class CryptoUtils {
         return  "0x" + stringR + stringS + v;
     }
 
+    /**
+     * <p>이더리움 표준 사이닝을 검증한다.</p>
+     * @param message 메시지
+     * @param address 송신자의 주소
+     * @param signature 서명 값 (r + s + v)
+     * @return 서명이 올바르면 참을 반환한다.
+     * @see CryptoUtils#signMessageByEthPrefix(String, String)
+     * @see CryptoUtils#validateSignECDSA(byte[], String, BigInteger, BigInteger)
+     * @since 0.1.0
+     */
     public static boolean validateEthSign(String message, String address, String signature) {
         byte[] messageHash = CryptoUtils.getKeccack256Bytes(buildEthPrefixMessage(message));
         String removed = signature.startsWith("0x") ? signature.substring(2) : signature;
@@ -197,6 +274,18 @@ public class CryptoUtils {
         return validateSignedTx(decoder.decode(receivedTx), encoder, address, chainId);
     }
 
+    /**
+     * <p>이더리움 트랜젝션 사이닝에 필요한 v 값을 구한다. EIP-155 기준.</p>
+     * @param messageHash 해시 처리된 메시지
+     * @param privateKey 사이닝에 사용된 개인키
+     * @param r 타원곡선 곱연산 r 값
+     * @param s 타원곡선 곱연산 s 값
+     * @return v 계산에 사용될 판별된 id 값
+     * @see Transaction#signRawTransaction(Web3jvProvider, String, EncoderProvider, List)
+     * @see CryptoUtils#signMessageByEthPrefix(String, String)
+     * @see CryptoUtils#signMessageByECDSA(byte[], String)
+     * @since 0.1.0
+     */
     public static int getEIP155v(byte[] messageHash, String privateKey, BigInteger r, BigInteger s) {
         ECNamedCurveParameterSpec params = ECNamedCurveTable.getParameterSpec("secp256k1");
         int recId = -1;
@@ -209,41 +298,6 @@ public class CryptoUtils {
         }
 
         return recId;
-    }
-
-    private static BigInteger recoverFromSignedMessage(
-            ECNamedCurveParameterSpec params,
-            byte[] messageHash,
-            BigInteger r,
-            BigInteger s,
-            int recId
-    ) {
-        BigInteger n = params.getN();
-        BigInteger i = BigInteger.valueOf((long) recId / 2);
-        BigInteger x = r.add(i.multiply(n));
-        BigInteger prime = SecP256K1Curve.q;
-        if (x.compareTo(prime) >= 0) {
-            return null;
-        }
-
-        X9IntegerConverter x9 = new X9IntegerConverter();
-        byte[] compEnc = x9.integerToBytes(x, 1 + x9.getByteLength(params.getCurve()));
-        compEnc[0] = (byte) (((recId & 1) == 1) ? 0x03 : 0x02);
-        ECPoint R = params.getCurve().decodePoint(compEnc);
-        if (!R.multiply(n).isInfinity()) {
-            return null;
-        }
-
-        BigInteger e = new BigInteger(1, messageHash);
-        BigInteger eInv = BigInteger.ZERO.subtract(e).mod(n);
-        BigInteger rInv = r.modInverse(n);
-        BigInteger srInv = rInv.multiply(s).mod(n);
-        BigInteger eInvrInv = rInv.multiply(eInv).mod(n);
-        ECPoint q = ECAlgorithms.sumOfTwoMultiplies(params.getG(), eInvrInv, R, srInv);
-
-        byte[] qBytes = q.getEncoded(false);
-
-        return new BigInteger(1, Arrays.copyOfRange(qBytes, 1, qBytes.length));
     }
 
     /**
@@ -280,7 +334,7 @@ public class CryptoUtils {
         byte[] cipherText = getCiphertextAES256CBC(Cipher.ENCRYPT_MODE, intVector, ecdhPriKey, byteMessage);
 
         byte[] dataToMac = buildDataToMac(intVector, ephemPubKeyBytes, cipherText);
-        byte[] mac = generateHmacSHA256(keyForMac, dataToMac);
+        byte[] mac = getCipherTextHmacSHA256(keyForMac, dataToMac);
 
         return new ArrayList<>(Arrays.asList(ephemPubKeyBytes, cipherText, intVector, mac));
     }
@@ -288,7 +342,7 @@ public class CryptoUtils {
     /**
      * <p>ECDH 와 AES-256-cbc 방식으로 암호화된 메시지를 복호화한다.</p>
      * @param srcPrivKey 상대방에게 전송한 공개키를 생성할 때 사용된 개인키
-     * @param givenPublicKey 수신한 받은 공개키
+     * @param givenPublicKey 수신한 공개키
      * @param cipherText 수신한 암호화된 메시지
      * @param iv 수신한 정수팩터
      * @param givenMac 수신한 메시지인증코드
@@ -314,7 +368,7 @@ public class CryptoUtils {
         byte[] ePubKeyByte = Utils.toBytes(theirAddress);
         byte[] dataToMac = buildDataToMac(iv, ePubKeyByte, cipherText);
 
-        byte[] derivedMac = generateHmacSHA256(keyForMac, dataToMac);
+        byte[] derivedMac = getCipherTextHmacSHA256(keyForMac, dataToMac);
 
         if (! Utils.toHexStringNo0x(givenMac).equals(Utils.toHexStringNo0x(derivedMac))) {
             throw new CipherSupportedException("Invalid password provided");
@@ -323,6 +377,12 @@ public class CryptoUtils {
         }
     }
 
+    /**
+     * <p>secp256k1 타원방정식을 사용한 ECDH 디피-헬만 키 합의 공유키를 생성한다.</p>
+     * @param srcPrivKey ECDH 에 사용될 개인키
+     * @param destPubKey ECDH 에 사용될 상대방의 공개키
+     * @return 디피-헬만 키 합의 프로토콜(압축됨)
+     */
     public static byte[] deriveECDHKeyAgreement(String srcPrivKey, String destPubKey) {
         X9ECParameters params = SECNamedCurves.getByName("secp256k1");
         ECDomainParameters domain =
@@ -334,6 +394,17 @@ public class CryptoUtils {
         return mult.getEncoded(true);
     }
 
+    /**
+     * <p>AES-256-CBC 기반 암복호화를 수행한다. 블록패딩 자동 수행됨.</p>
+     * @param mode 1 == 암호화, 2 == 복호화
+     * @param iv 정수팩터
+     * @param ecdhPriKey 암호화 비밀키
+     * @param target 암호화 대상 평문
+     * @return cipher text
+     * @throws Exception 암호화 실패시 발생
+     * @see CryptoUtils#getCipherTextHmacSHA256(byte[], byte[])
+     * @since 0.1.0
+     */
     public static byte[] getCiphertextAES256CBC(int mode, byte[] iv, byte[] ecdhPriKey, byte[] target) throws Exception {
         SecretKeySpec secretKeySpec = new SecretKeySpec(ecdhPriKey, "AES");
         IvParameterSpec ivSpec = new IvParameterSpec(iv);
@@ -344,13 +415,58 @@ public class CryptoUtils {
         return cipher.doFinal(target);
     }
 
-    public static byte[] generateHmacSHA256(byte[] password, byte[] target)
+    /**
+     * <p>Hmac SHA2-256 기반 암호화를 수행한다.</p>
+     * @param password 비밀번호 혹은 개인키
+     * @param target 암호화 대상 평문
+     * @return cipher text
+     * @throws NoSuchAlgorithmException SDK 에 구현된 암호화 클래스가 없는 경우 발생
+     * @throws InvalidKeyException 올바르지 않은 형식의 비밀키를 입력한 경우 발생
+     * @see CryptoUtils#getCiphertextAES256CBC(int, byte[], byte[], byte[])
+     * @since 0.1.0
+     */
+    public static byte[] getCipherTextHmacSHA256(byte[] password, byte[] target)
             throws NoSuchAlgorithmException, InvalidKeyException {
         Mac hmac = Mac.getInstance("HmacSHA256");
         SecretKeySpec secretKeySpec = new SecretKeySpec(password, "AES");
         hmac.init(secretKeySpec);
 
         return hmac.doFinal(target);
+    }
+
+    private static BigInteger recoverFromSignedMessage(
+            ECNamedCurveParameterSpec params,
+            byte[] messageHash,
+            BigInteger r,
+            BigInteger s,
+            int recId
+    ) {
+        BigInteger n = params.getN();
+        BigInteger i = BigInteger.valueOf((long) recId / 2);
+        BigInteger x = r.add(i.multiply(n));
+        BigInteger prime = SecP256K1Curve.q;
+        if (x.compareTo(prime) >= 0) {
+            return null;
+        }
+
+        X9IntegerConverter x9 = new X9IntegerConverter();
+        byte[] compEnc = x9.integerToBytes(x, 1 + x9.getByteLength(params.getCurve()));
+        compEnc[0] = (byte) (((recId & 1) == 1) ? 0x03 : 0x02);
+        ECPoint R = params.getCurve().decodePoint(compEnc);
+        if (!R.multiply(n).isInfinity()) {
+            return null;
+        }
+
+        BigInteger e = new BigInteger(1, messageHash);
+        BigInteger eInv = BigInteger.ZERO.subtract(e).mod(n);
+        BigInteger rInv = r.modInverse(n);
+        BigInteger srInv = rInv.multiply(s).mod(n);
+        BigInteger eInvrInv = rInv.multiply(eInv).mod(n);
+        ECPoint q = ECAlgorithms.sumOfTwoMultiplies(params.getG(), eInvrInv, R, srInv);
+
+        byte[] qBytes = q.getEncoded(false);
+
+        return new BigInteger(1, Arrays.copyOfRange(qBytes, 1, qBytes.length));
     }
 
     private static List<byte[]> generateECDHagreement(String privateKey, String publicKey) {
