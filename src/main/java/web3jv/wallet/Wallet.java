@@ -37,12 +37,16 @@ public class Wallet {
         return generateRandomHexStringNo0x(64);
     }
 
-    public static String getPublicKey(String priKey) {
+    public static String getPublicKeyWith04(String priKey) {
         byte[] priByte = (new BigInteger(priKey, 16)).toByteArray(); // ec = 제로패딩 있어야 함
         ECNamedCurveParameterSpec params = ECNamedCurveTable.getParameterSpec("secp256k1");
         ECPoint pointQ = params.getG().multiply(new BigInteger(priByte));
 
         return Hex.toHexString(pointQ.getEncoded(false));
+    }
+
+    public static String getPublicKeyNo04(String privateKey) {
+        return getPublicKeyWith04(privateKey).substring(2);
     }
 
     public static String getAddressNo0x(String pubKey) {
@@ -55,11 +59,11 @@ public class Wallet {
     }
 
     public static String getAddress0xFromPrivateKey(String privateKey) {
-        return getAddress0x(getPublicKey(privateKey));
+        return getAddress0x(getPublicKeyNo04(privateKey));
     }
 
     public static String getAddressNo0xFromPrivatKey(String privateKey) {
-        return getAddressNo0x(getPublicKey(privateKey));
+        return getAddressNo0x(getPublicKeyNo04(privateKey));
     }
 
     public static boolean checkAddressEIP55(String address) {
@@ -221,7 +225,7 @@ public class Wallet {
         return walletFile;
     }
 
-    private static String generateRandomHexStringNo0x(int length) {
+    public static String generateRandomHexStringNo0x(int length) {
         SecureRandom secureRandom = new SecureRandom();
         StringBuilder privateKey = new StringBuilder();
         for (int i = 0; i < length; i++) {

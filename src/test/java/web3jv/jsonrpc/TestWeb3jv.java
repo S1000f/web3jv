@@ -51,7 +51,8 @@ public class TestWeb3jv {
         assertEquals(new BigInteger("21000"), result);
     }
 
-    @Disabled
+    @Disabled(value = "처음 테스트 실행시 트랜젝션이 블록에 생성중인 상태(pending)일 경우, " +
+            "테스트 재실행 시 이전 테스트의 트랜젝션과 같은 논스를 가진 트랜젝션이 생성되므로 테스트가 실패할 수 있다")
     @DisplayName("트랜젝션 해시값이 올바르게 만들어진다")
     @Test
     public void ethSendRawTransactionTest() throws IOException {

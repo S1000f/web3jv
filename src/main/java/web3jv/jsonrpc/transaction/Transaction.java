@@ -119,7 +119,7 @@ public class Transaction {
         BigInteger[] sigs = CryptoUtils.signMessageByECDSA(encoder.encode(), privateKey);
         BigInteger r = sigs[0], s = sigs[1];
 
-        int recId = CryptoUtils.findV(messageHash, privateKey, r, s);
+        int recId = CryptoUtils.getEIP155v(messageHash, privateKey, r, s);
         String v = Integer.toHexString(recId + (Integer.parseInt(web3jv.getChainId()) * 2) + 35);
         byte[] rBytes = r.toByteArray();
         String stringR = rBytes.length == 32 ? Hex.toHexString(rBytes) : Hex.toHexString(rBytes).substring(2);
