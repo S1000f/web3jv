@@ -130,4 +130,17 @@ public class RlpEncoder implements EncoderProvider, DecoderProvider {
         this.additional = additional;
     }
 
+    @Override
+    public String toString() {
+        return "nonce : " + this.nonce + "\n" +
+                "gasPrice : " + this.gasPrice + "\n" +
+                "gasLimit : " + this.gasLimit + "\n" +
+                "to : " + this.to + "\n" +
+                "value : " + this.value + "\n" +
+                "data : " + this.data + "\n" +
+                "v : " + this.v + "\n" +
+                "r : " + this.r + "\n" +
+                "s : " + this.s + "\n" +
+                "additional : " + this.additional;
+    }
 }

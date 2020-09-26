@@ -55,4 +55,12 @@ public class RequestBody implements RequestInterface {
     public String getId() {
         return id;
     }
+
+    @Override
+    public String toString() {
+        return "jsonrpc : " + this.jsonrpc + "\n" +
+                "method : " + this.method + "\n" +
+                "params : " + this.params + "\n" +
+                "id : " + this.id;
+    }
 }

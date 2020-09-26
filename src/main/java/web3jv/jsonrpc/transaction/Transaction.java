@@ -82,7 +82,7 @@ public class Transaction {
         this.gasLimit = gasLimit;
         this.to = Utils.generifyAddress(to);
         this.value = value;
-        this.data = data;
+        this.data = data == null ? "" : data;
         this.chainId = chainId;
     }
 
@@ -188,7 +188,7 @@ public class Transaction {
         }
 
         public Builder data(String hexStringNo0x) {
-            build.data = hexStringNo0x;
+            build.data = hexStringNo0x == null ? "" : hexStringNo0x;
             return this;
         }
 
@@ -252,7 +252,7 @@ public class Transaction {
     }
 
     public void setData(String hexStringNo0x) {
-        this.data = hexStringNo0x;
+        this.data = hexStringNo0x == null ? "" : hexStringNo0x;
     }
 
     public BigInteger getNonce() {
@@ -310,12 +310,17 @@ public class Transaction {
 
     @Override
     public int hashCode() {
-        return this.nonce.hashCode() +
-                this.to.toLowerCase().hashCode() +
-                Optional.ofNullable(this.data).orElse("").hashCode() +
-                (this.v.startsWith("0x") ? this.v.substring(2) : this.v).hashCode() +
-                Optional.ofNullable(this.r).orElse("").hashCode() +
-                Optional.ofNullable(this.s).orElse("").hashCode();
+        int result = this.nonce.hashCode();
+        result = 31 * result + this.gasPrice.hashCode();
+        result = 31 * result + this.gasLimit.hashCode();
+        result = 31 * result + Utils.generifyAddress(this.to).hashCode();
+        result = 31 * result + Optional.ofNullable(this.value).orElse(BigInteger.ZERO).hashCode();
+        result = 31 * result + Optional.ofNullable(this.data).orElse("").hashCode();
+        result = 31 * result + this.v.hashCode();
+        result = 31 * result + this.r.hashCode();
+        result = 31 * result + this.s.hashCode();
+
+        return result;
     }
 
     @Override

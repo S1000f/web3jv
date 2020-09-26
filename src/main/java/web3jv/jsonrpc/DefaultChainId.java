@@ -51,12 +51,4 @@ public enum DefaultChainId implements ChainIdProvider {
         return Utils.toHexStringNo0x(chainId);
     }
 
-    /**
-     * 체인아이디의 10진수 String 을 반환한다.
-     * @return 10진수 String
-     */
-    @Override
-    public String toString() {
-        return String.valueOf(chainId);
-    }
 }

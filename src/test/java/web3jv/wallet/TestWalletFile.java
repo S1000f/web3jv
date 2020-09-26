@@ -38,4 +38,12 @@ public class TestWalletFile {
 
         assertEquals(privateKey, recoveredPriKey);
     }
+
+    @DisplayName("키스토어 복호화에 잘못된 비밀번호 입력시 예외가 발생한다")
+    @Test
+    public void decryptWalletFileWithWrongPasswordThenFailed() {
+        WalletFile file = Wallet.generateWalletFile(password, privateKey);
+
+        assertThrows(CipherSupportedException.class, () -> Wallet.decryptWalletFile("4444", file));
+    }
 }

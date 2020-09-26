@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import web3jv.jsonrpc.transaction.EncoderProvider;
 import web3jv.jsonrpc.transaction.Transaction;
 
-import javax.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -201,4 +200,9 @@ public class Web3jv implements Web3jvProvider {
         )).getResult();
     }
 
+    @Override
+    public String toString() {
+        return "endpoint : " + this.endpoint + "\n" +
+                "chain id : " + this.chainId + "(" + this.chainId.toHexStringNo0x() + ")";
+    }
 }

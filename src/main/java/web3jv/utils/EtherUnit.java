@@ -32,8 +32,4 @@ public enum EtherUnit implements UnitProvider {
         return weiValue;
     }
 
-    @Override
-    public String toString() {
-        return String.valueOf(weiValue);
-    }
 }

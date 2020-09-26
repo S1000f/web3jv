@@ -27,6 +27,11 @@ public class WalletUtils {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
+    /*
+    * util class not allowed to be instantiated
+    * */
+    private WalletUtils() {}
+
     /**
      * <p>지정된 경로와 이름으로 키스토어 파일을 저장한다.</p>
      * @param walletFile 키스토어 파일을 만들 WalletFile 객체

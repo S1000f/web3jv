@@ -1,10 +1,12 @@
 package web3jv.wallet;
 
+import web3jv.utils.Utils;
+
 /**
- * <p>Keystore 저장 객체. 버전 3. <i>{@code id} 필드와 {@code Crypto.cipherText}</i> 는
- * 같은 개인키를 담고있더라도 생성시 마다 그 값이 달라지므로, 키스토어간의 비교에
- * 적합하지 않음에 유의.
- * 키스토어 파일간의 동등비교는 오버라이딩된 {@code hashCode()} 나 {@code equals}
+ * <p>Keystore 저장 객체. 버전 3. <i>{@code id} 필드와 {@code WalletFile.Crypto.cipherText}</i>
+ * 필드는 동일한 개인키와 비밀번호를 담고있더라도 생성시 마다 그 값이 달라지므로, 키스토어간의 비교에
+ * 적합하지 않음에 유의.</p>
+ * <p>키스토어 파일간의 동등비교는 오버라이딩된 {@code hashCode()} 나 {@code equals}
  * 을 사용한다.</p>
  * @since 0.1.0
  * @author 김도협(닉)
@@ -52,16 +54,19 @@ public class WalletFile {
     @Override
     public String toString() {
         return "address: " + address + "\n" +
+                "crypto : " + crypto + "\n" +
                 "id: " + id + "\n" +
                 "version: " + version;
     }
 
     @Override
     public int hashCode() {
-        String cutAddress = this.address.toLowerCase();
-        return (cutAddress.startsWith("0x") ? cutAddress.substring(2) : cutAddress).hashCode() +
-                this.version +
-                this.crypto.getKdf().toLowerCase().trim().hashCode();
+        int result = Utils.generifyAddress(this.address).hashCode();
+        result = 31 * result + this.version;
+        result = 31 * result + this.crypto.getCipher().toLowerCase().trim().hashCode();
+        result = 31 * result + this.crypto.getKdf().toLowerCase().trim().hashCode();
+
+        return result;
     }
 
     @Override
@@ -131,9 +136,11 @@ public class WalletFile {
         @Override
         public String toString() {
             return "cipher : " + cipher + "\n" +
-                    "ciphertext : " + ciphertext + "\n" +
-                    "kdf : " + kdf + "\n" +
-                    "mac : " + mac;
+                    "\tciphertext : " + ciphertext + "\n" +
+                    "\tcipherParams : " + cipherparams + "\n" +
+                    "\tkdf : " + kdf + "\n" +
+                    "\tkdfParams : " + kdfparams + "\n" +
+                    "\tmac : " + mac;
         }
     }
 
@@ -146,6 +153,11 @@ public class WalletFile {
 
         public void setIv(String iv) {
             this.iv = iv;
+        }
+
+        @Override
+        public String toString() {
+            return "\n\t\tiv : " + this.iv;
         }
     }
 
@@ -198,11 +210,11 @@ public class WalletFile {
 
         @Override
         public String toString() {
-            return "dklen : " + dklen + "\n" +
-                    "n : " + n + "\n" +
-                    "p : " + p + "\n" +
-                    "r : " + r + "\n" +
-                    "salt : " + salt;
+            return "\n\t\tdklen : " + dklen + "\n" +
+                    "\t\tn : " + n + "\n" +
+                    "\t\tp : " + p + "\n" +
+                    "\t\tr : " + r + "\n" +
+                    "\t\tsalt : " + salt;
         }
     }
 
