@@ -42,45 +42,36 @@ public class Web3jv implements Web3jvProvider {
 
     private final ObjectMapper mapper = new ObjectMapper();
     private String endpoint;
-    private String chainId;
+    private ChainIdProvider chainId;
 
     public Web3jv() {
     }
 
     public Web3jv(String endpoint) {
         this.endpoint = endpoint;
-        this.chainId = Optional.ofNullable(netVersion()).orElse("0");
+        this.chainId = () -> Optional.ofNullable(netVersion()).orElse("00");
     }
 
     public Web3jv(String endpoint, ChainIdProvider chainId) {
         this.endpoint = endpoint;
-        this.chainId = chainId.toString();
+        this.chainId = chainId;
     }
 
     public String getEndpoint() {
         return endpoint;
     }
 
-    public void setEndpoint(String endpoint, ChainIdProvider defaultChainId) {
+    public void setEndpoint(String endpoint, ChainIdProvider chainId) {
         this.endpoint = endpoint;
-        this.chainId = defaultChainId.toString();
+        this.chainId = chainId;
     }
 
-    public void setEndpoint(String endpoint, String customChainId) {
-        this.endpoint = endpoint;
-        this.chainId = customChainId;
-    }
-
-    public String getChainId() {
+    public ChainIdProvider getChainId() {
         return chainId;
     }
 
-    public void setChainId(ChainIdProvider chain) {
-        this.chainId = chain.toString();
-    }
-
-    public void setCustomChainId(String customChainId) {
-        this.chainId = customChainId;
+    public void setChainId(ChainIdProvider chainId) {
+        this.chainId = chainId;
     }
 
     public String netVersion() {

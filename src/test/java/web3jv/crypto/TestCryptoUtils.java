@@ -161,7 +161,7 @@ public class TestCryptoUtils {
                 .gasLimit(new BigInteger("21000"))
                 .to("a11CB28A6066684DB968075101031d3151dC40ED")
                 .value(Utils.toWeiBigDecimal("0.01", EtherUnit.ETHER).toBigInteger())
-                .chainId(DefaultChainId.ROPSTEN.toHexStringNo0x())
+                .chainId(DefaultChainId.ROPSTEN)
                 .build();
         return transaction.signRawTransaction(web3jv, samplePriKey, encoder, null);
     }

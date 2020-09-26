@@ -14,7 +14,7 @@ import web3jv.utils.Utils;
  *     Geth 사설네트워크 default: 1337
  * </pre></p>
  * <p>기존의 체인아이디 값이 변경되거나 별도의 체인아이디를 사용할 필요가 있을땐,
- * {@code ChainIdProvider} 를 구현하면 된다.</p>
+ * {@code ChainIdProvider} 를 구현하거나 람다식을 사용한다.</p>
  * @see ChainIdProvider
  * @since 0.1.0
  * @author 김도협(닉)

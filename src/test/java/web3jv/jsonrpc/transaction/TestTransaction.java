@@ -16,7 +16,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static web3jv.utils.Utils.toHexStringNo0x;
 
 public class TestTransaction {
 
@@ -43,7 +42,7 @@ public class TestTransaction {
                 .to("a11cb28a6066684db968075101031d3151dc40ed")
                 .value(new BigInteger("056bc75e2d63100000", 16))
                 .data("")
-                .chainId("05eda476")
+                .chainId(() -> "05eda476")
                 .build();
         transaction.signRawTransaction(web3jv, samplePriKey, encoder, null);
         String r = transaction.getR();
@@ -64,7 +63,7 @@ public class TestTransaction {
                 .to("a11CB28A6066684DB968075101031d3151dC40ED")
                 .data("")
                 .value(Utils.toWeiBigDecimal("0.01", EtherUnit.ETHER).toBigInteger())
-                .chainId(toHexStringNo0x(web3jv.getChainId()))
+                .chainId(web3jv.getChainId())
                 .build();
 
         String rawTx = transaction.signRawTransaction(web3jv, samplePriKey, encoder, null);
@@ -166,7 +165,7 @@ public class TestTransaction {
                 .gasLimit(new BigInteger("21000"))
                 .to("a11CB28A6066684DB968075101031d3151dC40ED")
                 .value(Utils.toWeiBigDecimal("0.01", EtherUnit.ETHER).toBigInteger())
-                .chainId(toHexStringNo0x(web3jv.getChainId()))
+                .chainId(web3jv.getChainId())
                 .build();
     }
 
@@ -177,7 +176,7 @@ public class TestTransaction {
         writer.writeByteArray(Utils.toBytes("a11CB28A6066684DB968075101031d3151dC40ED"));
         writer.writeBigInteger(Utils.toWeiBigDecimal("0.01", EtherUnit.ETHER).toBigInteger());
         writer.writeByteArray(Utils.toBytes(""));
-        writer.writeByteArray(Utils.toBytes(toHexStringNo0x(web3jv.getChainId())));
+        writer.writeByteArray(Utils.toBytes(web3jv.getChainId().toHexStringNo0x()));
         writer.writeByteArray(Utils.toBytes(""));
         writer.writeByteArray(Utils.toBytes(""));
     }

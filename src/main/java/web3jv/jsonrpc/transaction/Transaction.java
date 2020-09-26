@@ -2,6 +2,7 @@ package web3jv.jsonrpc.transaction;
 
 import org.bouncycastle.util.encoders.Hex;
 import web3jv.crypto.CryptoUtils;
+import web3jv.jsonrpc.ChainIdProvider;
 import web3jv.jsonrpc.Web3jvProvider;
 import web3jv.utils.Utils;
 
@@ -39,7 +40,7 @@ public class Transaction {
     private String v;
     private String r;
     private String s;
-    private String chainId;
+    private ChainIdProvider chainId;
     private String from;
     private byte[] signedTx;
 
@@ -63,7 +64,7 @@ public class Transaction {
      * @param to String('0x' 없는 hex String) 수신주소(토큰일 경우 컨트랙트 주소)
      * @param value BigInteger 수량
      * @param data String 데이터(공백일 경우 "" 입력)
-     * @param chainId String('0x' 없는 hex String) 체인 식별자(사이닝 전 v 필드에 대입됨)
+     * @param chainId 체인 식별자(사이닝 전 v 필드에 대입됨)
      * @see Transaction#builder()
      * @since 0.1.0
      */
@@ -74,7 +75,7 @@ public class Transaction {
             String to,
             BigInteger value,
             String data,
-            String chainId
+            ChainIdProvider chainId
     ) {
         this.nonce = nonce;
         this.gasPrice = gasPrice;
@@ -106,7 +107,7 @@ public class Transaction {
             List<byte[]> additional
     ) {
         setUpEncoder(encoder, additional);
-        encoder.setV(this.chainId);
+        encoder.setV(this.chainId.toHexStringNo0x());
         encoder.setR("");
         encoder.setS("");
         byte[] messageHash = CryptoUtils.getKeccack256Bytes(encoder.encode());
@@ -115,7 +116,7 @@ public class Transaction {
         BigInteger r = sigs[0], s = sigs[1];
 
         int recId = CryptoUtils.getEIP155v(messageHash, privateKey, r, s);
-        String v = Integer.toHexString(recId + (Integer.parseInt(web3jv.getChainId()) * 2) + 35);
+        String v = Integer.toHexString(recId + (Integer.parseInt(web3jv.getChainId().toHexStringNo0x()) * 2) + 35);
         byte[] rBytes = r.toByteArray();
         String stringR = rBytes.length == 32 ? Hex.toHexString(rBytes) : Hex.toHexString(rBytes).substring(2);
         String stringS = Hex.toHexString(s.toByteArray());
@@ -191,8 +192,8 @@ public class Transaction {
             return this;
         }
 
-        public Builder chainId(String hexStringNo0x) {
-            build.chainId = hexStringNo0x;
+        public Builder chainId(ChainIdProvider chainId) {
+            build.chainId = chainId;
             return this;
         }
 
@@ -262,12 +263,12 @@ public class Transaction {
         this.nonce = nonce;
     }
 
-    public String getChainId() {
+    public ChainIdProvider getChainId() {
         return chainId;
     }
 
-    public void setChainId(String hexStringNo0x) {
-        this.chainId = hexStringNo0x;
+    public void setChainId(ChainIdProvider chainId) {
+        this.chainId = chainId;
     }
 
     public String getV() {
