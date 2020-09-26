@@ -3,7 +3,8 @@ package web3jv.jsonrpc;
 import web3jv.utils.Utils;
 
 /**
- * <p>알려진 이더리움 네트워크의 체인아이디 값. 목록:
+ * <p>알려진 이더리움 네트워크의 체인아이디로 {@code ChainIdProvider} 를 구현한 열거형 객체.
+ * 목록:
  * <pre>
  *     이더리움 메인넷: 1
  *     Ropsten 테스트넷: 3
@@ -12,13 +13,14 @@ import web3jv.utils.Utils;
  *     Kovan 테스트넷: 42
  *     Geth 사설네트워크 default: 1337
  * </pre></p>
- * @see ChainId#toInt()
- * @see ChainId#toHexStringNo0x()
+ * <p>기존의 체인아이디 값이 변경되거나 별도의 체인아이디를 사용할 필요가 있을땐,
+ * {@code ChainIdProvider} 를 구현하면 된다.</p>
+ * @see ChainIdProvider
  * @since 0.1.0
  * @author 김도협(닉)
  * @version 0.1.0
  */
-public enum ChainId {
+public enum DefaultChainId implements ChainIdProvider {
 
     MAIN(1),
     ROPSTEN(3),
@@ -29,7 +31,7 @@ public enum ChainId {
 
     private final int chainId;
 
-    ChainId(int chainId) {
+    DefaultChainId(int chainId) {
         this.chainId = chainId;
     }
 

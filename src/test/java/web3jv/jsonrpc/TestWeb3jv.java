@@ -30,7 +30,7 @@ public class TestWeb3jv {
      */
     @BeforeEach
     public void setUp() {
-        web3jv = new Web3jv("https://ropsten.infura.io/v3/ff7a2a6b2e054541a1b4bffe4c58bd11");
+        web3jv = new Web3jv("https://ropsten.infura.io/v3/ff7a2a6b2e054541a1b4bffe4c58bd11", DefaultChainId.ROPSTEN);
         samplePriKey = "28e0af3f15316ffb692fb4c73bf54d2d0eada493204b9a4cb7e2d10812e4a73e";
         sampleAddressFrom = "0xAAA4d18979F2d3A52c426574Ed5b444a8E496A5d";
         sampleAddressTo = "0x7b74C763119a062A52AEf110e949542f838bB660";
@@ -39,7 +39,7 @@ public class TestWeb3jv {
 
     @Test
     public void web3jClientVersionTest() throws IOException {
-        web3jv.setEndpoint("https://ropsten.infura.io/v3/ff7a2a6b2e054541a1b4bffe4c58bd11", ChainId.ROPSTEN);
+        web3jv.setEndpoint("https://ropsten.infura.io/v3/ff7a2a6b2e054541a1b4bffe4c58bd11", DefaultChainId.ROPSTEN);
         String result = web3jv.web3ClientVersion();
 
         assertEquals("Geth/v1.9.9-omnibus-e320ae4c-20191206/linux-amd64/go1.13.4", result);

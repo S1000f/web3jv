@@ -52,7 +52,7 @@ public class Web3jv implements Web3jvProvider {
         this.chainId = Optional.ofNullable(netVersion()).orElse("0");
     }
 
-    public Web3jv(String endpoint, ChainId chainId) {
+    public Web3jv(String endpoint, ChainIdProvider chainId) {
         this.endpoint = endpoint;
         this.chainId = chainId.toString();
     }
@@ -61,9 +61,9 @@ public class Web3jv implements Web3jvProvider {
         return endpoint;
     }
 
-    public void setEndpoint(String endpoint, ChainId chainId) {
+    public void setEndpoint(String endpoint, ChainIdProvider defaultChainId) {
         this.endpoint = endpoint;
-        this.chainId = chainId.toString();
+        this.chainId = defaultChainId.toString();
     }
 
     public void setEndpoint(String endpoint, String customChainId) {
@@ -75,7 +75,7 @@ public class Web3jv implements Web3jvProvider {
         return chainId;
     }
 
-    public void setChainId(ChainId chain) {
+    public void setChainId(ChainIdProvider chain) {
         this.chainId = chain.toString();
     }
 

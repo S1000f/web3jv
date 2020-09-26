@@ -1,6 +1,6 @@
 package web3jv.jsonrpc.transaction;
 
-import web3jv.jsonrpc.ChainId;
+import web3jv.jsonrpc.ChainIdProvider;
 import web3jv.jsonrpc.Web3jvProvider;
 
 // Web3jv의 스텁
@@ -15,9 +15,9 @@ public class StubWeb3jv implements Web3jvProvider {
     }
 
     @Override
-    public void setEndpoint(String endpoint, ChainId chainId) {
+    public void setEndpoint(String endpoint, ChainIdProvider defaultChainId) {
         this.endpoint = endpoint;
-        this.chainId = chainId.toString();
+        this.chainId = defaultChainId.toString();
     }
 
     @Override
@@ -32,8 +32,8 @@ public class StubWeb3jv implements Web3jvProvider {
     }
 
     @Override
-    public void setChainId(ChainId chainId) {
-        this.chainId = chainId.toString();
+    public void setChainId(ChainIdProvider defaultChainId) {
+        this.chainId = defaultChainId.toString();
     }
 
     @Override

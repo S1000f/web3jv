@@ -10,7 +10,7 @@ public class TestUtils {
     @DisplayName("18자리 wei를 ether로 변환시 0.x...가 된다")
     @Test
     public void fromWeiToEtherLength18Test() {
-        String result = Utils.fromWei("545109094442210255", EtherUnit.ETHER);
+        String result = Utils.fromWeiString("545109094442210255", () -> 18);
 
         assertEquals("0.545109094442210255", result);
     }
@@ -18,7 +18,7 @@ public class TestUtils {
     @DisplayName("16자리 wei를 ether로 변환시 0.00x...가 된다")
     @Test
     public void fromWeiToEtherLengthUnder18Test() {
-        String result = Utils.fromWei("5451090944422102", EtherUnit.ETHER);
+        String result = Utils.fromWeiString("5451090944422102", EtherUnit.ETHER);
 
         assertEquals("0.005451090944422102", result);
     }
@@ -26,7 +26,7 @@ public class TestUtils {
     @DisplayName("20자리 wei를 ether로 변환 시 xx.x...로 된다")
     @Test
     public void fromWeiToEtherLengthOver18Test() {
-        String result = Utils.fromWei("50010909444221025577", EtherUnit.ETHER);
+        String result = Utils.fromWeiString("50010909444221025577", EtherUnit.ETHER);
 
         assertEquals("50.010909444221025577", result);
     }
@@ -34,7 +34,7 @@ public class TestUtils {
     @DisplayName("wei를 Gwei로 변환된다")
     @Test
     public void fromWeiToGewiTest() {
-        String result = Utils.fromWei("545109094442210255", EtherUnit.GWEI);
+        String result = Utils.fromWeiString("545109094442210255", EtherUnit.GWEI);
 
         assertEquals("545109094.442210255", result);
     }

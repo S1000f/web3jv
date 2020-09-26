@@ -6,7 +6,7 @@ import org.bouncycastle.util.encoders.Hex;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import web3jv.jsonrpc.ChainId;
+import web3jv.jsonrpc.DefaultChainId;
 import web3jv.jsonrpc.Web3jvProvider;
 import web3jv.utils.EtherUnit;
 import web3jv.utils.Utils;
@@ -27,7 +27,7 @@ public class TestTransaction {
     @BeforeEach
     public void setUp() {
         web3jv = new StubWeb3jv();
-        web3jv.setChainId(ChainId.ROPSTEN);
+        web3jv.setChainId(DefaultChainId.ROPSTEN);
         encoder = new RlpEncoder();
 
     }

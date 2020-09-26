@@ -405,7 +405,12 @@ public class CryptoUtils {
      * @see CryptoUtils#getCipherTextHmacSHA256(byte[], byte[])
      * @since 0.1.0
      */
-    public static byte[] getCiphertextAES256CBC(int mode, byte[] iv, byte[] ecdhPriKey, byte[] target) throws Exception {
+    public static byte[] getCiphertextAES256CBC(
+            int mode,
+            byte[] iv,
+            byte[] ecdhPriKey,
+            byte[] target
+    ) throws Exception {
         SecretKeySpec secretKeySpec = new SecretKeySpec(ecdhPriKey, "AES");
         IvParameterSpec ivSpec = new IvParameterSpec(iv);
 

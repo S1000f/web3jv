@@ -3,7 +3,7 @@ package web3jv.crypto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import web3jv.jsonrpc.ChainId;
+import web3jv.jsonrpc.DefaultChainId;
 import web3jv.jsonrpc.Web3jvProvider;
 import web3jv.jsonrpc.transaction.*;
 import web3jv.utils.EtherUnit;
@@ -27,7 +27,7 @@ public class TestCryptoUtils {
     @BeforeEach
     public void setUp() {
         web3jv = new StubWeb3jv();
-        web3jv.setChainId(ChainId.ROPSTEN);
+        web3jv.setChainId(DefaultChainId.ROPSTEN);
         encoder = new RlpEncoder();
         decoder = new RlpDecoder();
         samplePriKey = "28e0af3f15316ffb692fb4c73bf54d2d0eada493204b9a4cb7e2d10812e4a73e";
@@ -44,7 +44,7 @@ public class TestCryptoUtils {
                 receivedDecoded,
                 encoder,
                 Wallet.getAddress0xFromPrivateKey(samplePriKey),
-                ChainId.ROPSTEN.toHexStringNo0x()
+                DefaultChainId.ROPSTEN.toHexStringNo0x()
         ));
     }
 
@@ -58,7 +58,7 @@ public class TestCryptoUtils {
                 receivedDecoded,
                 encoder,
                 Wallet.getAddress0xFromPrivateKey(samplePriKey),
-                ChainId.MAIN.toHexStringNo0x()
+                DefaultChainId.MAIN.toHexStringNo0x()
         ));
     }
 
@@ -72,7 +72,7 @@ public class TestCryptoUtils {
                 receivedDecoded,
                 encoder,
                 wrongAddressSender,
-                ChainId.MAIN.toHexStringNo0x()
+                DefaultChainId.MAIN.toHexStringNo0x()
         ));
     }
 
@@ -86,7 +86,7 @@ public class TestCryptoUtils {
                 decoder,
                 encoder,
                 Wallet.getAddress0xFromPrivateKey(samplePriKey),
-                ChainId.ROPSTEN.toHexStringNo0x()
+                DefaultChainId.ROPSTEN.toHexStringNo0x()
         ));
     }
 
@@ -161,7 +161,7 @@ public class TestCryptoUtils {
                 .gasLimit(new BigInteger("21000"))
                 .to("a11CB28A6066684DB968075101031d3151dC40ED")
                 .value(Utils.toWeiBigDecimal("0.01", EtherUnit.ETHER).toBigInteger())
-                .chainId(ChainId.ROPSTEN.toHexStringNo0x())
+                .chainId(DefaultChainId.ROPSTEN.toHexStringNo0x())
                 .build();
         return transaction.signRawTransaction(web3jv, samplePriKey, encoder, null);
     }

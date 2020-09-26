@@ -14,18 +14,16 @@ import java.util.Optional;
  * <pre>
  *     1. 트랜젝션 인스턴스 생성
  *     2. 트랜젝션 필드값 주입
- *     3. 사이닝
+ *     3. 서명
  *     4. 사인된 트랜젝션을 파라미터로 json-rpc 호출
  * </pre>
  * 인스턴스 생성 및 초기화 방식:
  * <pre>
  *     1. 생성자함수
- *     2. 빌더패턴({@link Transaction#builder})
+ *     2. 빌더패턴
  * </pre></p>
  * @see Transaction#signRawTransaction
  * @see Transaction#builder()
- * @see EncoderProvider
- * @see web3jv.jsonrpc.Web3jv#ethSendRawTransaction
  * @since 0.1.0
  * @author 김도협(닉)
  * @version 0.1.0
@@ -66,7 +64,6 @@ public class Transaction {
      * @param value BigInteger 수량
      * @param data String 데이터(공백일 경우 "" 입력)
      * @param chainId String('0x' 없는 hex String) 체인 식별자(사이닝 전 v 필드에 대입됨)
-     * @param from String('0x' 없는 hex String) 송신주소(""입력)
      * @see Transaction#builder()
      * @since 0.1.0
      */
@@ -77,8 +74,7 @@ public class Transaction {
             String to,
             BigInteger value,
             String data,
-            String chainId,
-            String from
+            String chainId
     ) {
         this.nonce = nonce;
         this.gasPrice = gasPrice;
@@ -87,7 +83,6 @@ public class Transaction {
         this.value = value;
         this.data = data;
         this.chainId = chainId;
-        this.from = Utils.generifyAddress(from);
     }
 
     /**
