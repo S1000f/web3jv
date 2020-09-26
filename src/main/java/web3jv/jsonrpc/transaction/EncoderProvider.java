@@ -13,7 +13,6 @@ import java.util.List;
  * <p>additional 필드는 이더리움 기본 클라이언트의 트랜젝션 구조에 포함되지 않는,
  * 별도의 커스텀된 트랜젝션 구성항목을 포함하여 인코딩할때 사용된다. 추가 항목이 없을
  * 경우엔 <i>null</i> 을 전달해야 한다.</p>
- *
  * @implSpec
  * 트랜젝션의 각 요소(<i>nonce, gasPrice, gasLimit, addressTo, value, data, v, r, s</i>)
  * 들의 setter 을 구현해야 하며, {@link EncoderProvider#encode()} 는 인코딩된 결과를 {@code byte[]}

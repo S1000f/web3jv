@@ -131,7 +131,7 @@ public class Transaction {
 
         this.signedTx = encoder.encode();
 
-        return "0x" + Utils.toHexStringNo0x(encoder.encode());
+        return "0x" + Utils.toHexStringNo0x(this.signedTx);
     }
 
     public String generateTxHash() {

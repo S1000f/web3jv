@@ -1,5 +1,6 @@
 package web3jv.jsonrpc.transaction;
 
+import net.consensys.cava.bytes.Bytes;
 import net.consensys.cava.rlp.RLP;
 import net.consensys.cava.rlp.RLPWriter;
 import web3jv.utils.Utils;
@@ -13,13 +14,13 @@ import java.util.List;
  * 별도의 커스텀된 트랜젝션 구성항목을 포함하여 인코딩할때 사용된다. 추가 항목이 없을
  * 경우엔 <i>null</i> 을 전달해야 한다.</p>
  * @implNote net.consensys.cava 라이브러리 사용
- * @see RlpEncoder#encode()
- * @see web3jv.jsonrpc.transaction.EncoderProvider
+ * @see DecoderProvider
+ * @see EncoderProvider
  * @since 0.1.0
  * @author 김도협(닉)
  * @version 0.1.0
  */
-public class RlpEncoder implements EncoderProvider {
+public class RlpEncoder implements EncoderProvider, DecoderProvider {
 
     private BigInteger nonce;
     private BigInteger gasPrice;
@@ -38,6 +39,7 @@ public class RlpEncoder implements EncoderProvider {
      * @return byte[] 인코딩된 값
      * @since 0.1.0
      */
+    @SuppressWarnings("Convert2MethodRef")
     public byte[] encode() {
         byte[] result;
         if (additional != null) {
@@ -63,6 +65,29 @@ public class RlpEncoder implements EncoderProvider {
         writer.writeByteArray(Utils.toBytes(this.v));
         writer.writeByteArray(Utils.toBytes(this.r));
         writer.writeByteArray(Utils.toBytes(this.s));
+    }
+
+    public Transaction decode(byte[] receivedTx) {
+        Bytes wrapped = Bytes.wrap(receivedTx);
+        Transaction transaction = new Transaction();
+
+        return RLP.decodeList(wrapped, (reader) -> {
+            transaction.setNonce(reader.readBigInteger());
+            transaction.setGasPrice(reader.readBigInteger());
+            transaction.setGasLimit(reader.readBigInteger());
+            transaction.setTo(Utils.toHexStringNo0x(reader.readByteArray()));
+            transaction.setValue(reader.readBigInteger());
+            transaction.setData(Utils.toHexStringNo0x(reader.readByteArray()));
+            transaction.setV(Utils.toHexStringNo0x(reader.readByteArray()));
+            transaction.setR(Utils.toHexStringNo0x(reader.readByteArray()));
+            transaction.setS(Utils.toHexStringNo0x(reader.readByteArray()));
+            return transaction;
+        });
+    }
+
+    public Transaction decode(String receivedTx) {
+        String cut = receivedTx.startsWith("0x") ? receivedTx.substring(2) : receivedTx;
+        return decode(Utils.toBytes(cut));
     }
 
     public void setNonce(BigInteger nonce) {

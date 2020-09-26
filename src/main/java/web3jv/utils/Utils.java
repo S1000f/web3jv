@@ -8,12 +8,17 @@ import java.math.BigInteger;
 import java.math.RoundingMode;
 
 /**
- * <p>단위변환, 타입 변환 등의 일반적인 유틸리티의 모음. 전역 메소드로 구성됨.</p>
+ * <p>단위변환, 타입 변환 등의 공용 유틸리티의 모음. 전역 메소드로만 구성됨.</p>
  * @since 0.1.0
  * @author 김도협(닉)
  * @version 0.1.0
  */
 public class Utils {
+
+    /*
+    * util class not allowed to be instantiated
+    * */
+    private Utils() {}
 
     public static BigDecimal fromWeiBigDecimal(BigDecimal amount, UnitProvider targetUnit) {
         BigDecimal position = new BigDecimal("10").pow(targetUnit.getWeiValue());

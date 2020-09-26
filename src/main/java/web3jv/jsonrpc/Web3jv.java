@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import web3jv.jsonrpc.transaction.EncoderProvider;
 import web3jv.jsonrpc.transaction.Transaction;
 
+import javax.annotation.Nullable;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;

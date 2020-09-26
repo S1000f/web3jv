@@ -15,6 +15,10 @@ import java.math.BigInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * <p>인퓨라를 통해 이더리움 네트워크와 통신하는 테스트 이므로 엔드포인트의 상태에 따라
+ * 테스트가 실패 할 수도 있음에 유의.</p>
+ */
 public class TestWeb3jv {
 
     private Web3jv web3jv;
@@ -23,10 +27,6 @@ public class TestWeb3jv {
     private String sampleAddressTo;
     private EncoderProvider encoder;
 
-    /**
-     * JSON-RPC 목 객체가 아직 구현전이므로,
-     * 아래 엔드포인트의 상태에 따라 테스트가 실패 할 수도 있음
-     */
     @BeforeEach
     public void setUp() {
         web3jv = new Web3jv(
@@ -39,6 +39,7 @@ public class TestWeb3jv {
         encoder = new RlpEncoder();
     }
 
+    @DisplayName("인퓨라 엔드포인트 입력시 geth 클라이언트의 특정 버전이 반환된다")
     @Test
     public void web3jClientVersionTest() throws IOException {
         web3jv.setEndpoint(

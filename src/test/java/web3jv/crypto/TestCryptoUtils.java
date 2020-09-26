@@ -29,7 +29,7 @@ public class TestCryptoUtils {
         web3jv = new StubWeb3jv();
         web3jv.setChainId(DefaultChainId.ROPSTEN);
         encoder = new RlpEncoder();
-        decoder = new RlpDecoder();
+        decoder = new RlpEncoder();
         samplePriKey = "28e0af3f15316ffb692fb4c73bf54d2d0eada493204b9a4cb7e2d10812e4a73e";
         wrongAddressSender = "0xa11CB28A6066684DB968075101031d3151dC40ED";
     }

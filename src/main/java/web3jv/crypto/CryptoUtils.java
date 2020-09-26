@@ -38,7 +38,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * <p>암호화와 관련된 유틸리티 메소드 모음. 전역 메소드로 구성되어 있음.</p>
+ * <p>암호화와 관련된 유틸리티 메소드 모음. 정적 메소드로 구성되어 있음.</p>
  * @author 김도협(닉)
  * @version 0.1.0
  * @since 0.1.0
@@ -46,6 +46,11 @@ import java.util.List;
 public class CryptoUtils {
 
     private static final String ETHEREUM_SPEC = "\u0019Ethereum Signed Message:\n";
+
+    /*
+    * util class not allowed to be instantiated
+    * */
+    private CryptoUtils() {}
 
     /**
      * <p>Keccak256 해시 함수.</p>

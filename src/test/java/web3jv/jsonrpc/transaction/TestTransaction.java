@@ -111,7 +111,7 @@ public class TestTransaction {
         String receivedTx = transaction.signRawTransaction(web3jv, samplePriKey, encoder, null);
 
         byte[] byteTx = Utils.toBytes(receivedTx.substring(2));
-        DecoderProvider decoderProvider = new RlpDecoder();
+        DecoderProvider decoderProvider = new RlpEncoder();
         Transaction decodedTx = decoderProvider.decode(byteTx);
 
         assertEquals(transaction, decodedTx);
