@@ -6,6 +6,9 @@ import org.bouncycastle.util.encoders.Hex;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 /**
  * <p>단위변환, 타입 변환 등의 공용 유틸리티의 모음. 전역 메소드로만 구성됨.</p>
@@ -62,12 +65,17 @@ public class Utils {
         return Hex.toHexString(input);
     }
 
-    public static String toHexStringNo0x(String decimal) {
-        return Hex.toHexString(new BigInteger(decimal, 16).toByteArray());
+    public static String toHexStringNo0x(String number, int radix) {
+        return toHexStringNo0x(new BigInteger(number, radix).toByteArray());
     }
 
     public static String toHexStringNo0x(int decimal) {
-        return toHexStringNo0x(String.valueOf(decimal));
+        return toHexStringNo0x(String.valueOf(decimal), 10);
+    }
+
+    public static String toHexStringNo0x(String plainText, Charset charset) {
+        Charset encoded = charset == null ? StandardCharsets.UTF_8 : charset;
+        return toHexStringNo0x(plainText.getBytes(encoded));
     }
 
     public static byte[] toBytes(String hexStringNo0x) {
@@ -82,5 +90,21 @@ public class Utils {
      */
     public static String generifyAddress(String address) {
         return address.toLowerCase().startsWith("0x") ? address.toLowerCase().substring(2) : address.toLowerCase();
+    }
+
+    public static byte[] concatBytes(List<byte[]> list) {
+        int totalLength = list.stream()
+                .map(b -> b.length)
+                .reduce((pre, curr) -> pre + curr)
+                .get();
+
+        byte[] builder = new byte[totalLength];
+        int filled = 0;
+        for (byte[] source : list) {
+            System.arraycopy(source, 0, builder, filled, source.length);
+            filled += source.length;
+        }
+
+        return builder;
     }
 }

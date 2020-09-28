@@ -53,14 +53,16 @@ public class CryptoUtils {
     private CryptoUtils() {}
 
     /**
-     * <p>Keccak256 해시 함수.</p>
-     * @param target 해싱 할 대상
+     * <p>Keccak256 해시 함수. Hex String 만 인자로 전달할 것.
+     * 다른 인코딩된 문자열(예: utf-8) 은 {@code byte[]} 을 인자로 받는
+     * 오버로딩된 함수들을 사용.</p>
+     * @param hexString 해싱 할 대상의 Hex String
      * @return 해시 값
      * @since 0.1.0
      */
-    public static String getKeccack256HexString(String target) {
+    public static String getKeccack256HexString(String hexString) {
         Keccak.DigestKeccak keccak = new Keccak.Digest256();
-        byte[] bytes = ByteUtils.fromHexString(target); // keccak = 제로패딩 없어야 함
+        byte[] bytes = ByteUtils.fromHexString(hexString); // keccak = 제로패딩 없어야 함
 
         return Hex.toHexString(keccak.digest(bytes));
     }
