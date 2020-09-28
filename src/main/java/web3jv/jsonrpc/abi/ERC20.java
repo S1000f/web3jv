@@ -10,10 +10,8 @@ import java.util.List;
 
 public class ERC20 implements ABI {
 
-    private String name;
-    private List<String> paramsList;
-    private String address;
-
+    private String addressFrom;
+    private String addressTo;
 
     public String getTxDataBalanceOf(String addressFrom) {
         byte[] func = functionSelector("balanceOf", Collections.singletonList("address"));
@@ -27,12 +25,12 @@ public class ERC20 implements ABI {
         byte[] func = functionSelector("transfer", Arrays.asList("address", "uint256"));
         byte[] addressByte = getParamAddress(addressTo);
         byte[] amountByte = getParamAmount(amount, originUnit);
-        byte[] concated = Utils.concatBytes(Arrays.asList(func, addressByte, amountByte));
+        byte[] txDataByte = Utils.concatBytes(Arrays.asList(func, addressByte, amountByte));
 
-        return "0x" + Utils.toHexStringNo0x(concated);
+        return "0x" + Utils.toHexStringNo0x(txDataByte);
     }
 
-    public byte[] functionSelector(String name, List<String> paramsList) {
+    private byte[] functionSelector(String name, List<String> paramsList) {
         StringBuilder builder = new StringBuilder(name);
         builder.append("(");
         if (paramsList != null && ! paramsList.isEmpty()) {
@@ -47,23 +45,13 @@ public class ERC20 implements ABI {
         return Utils.toBytes(result.substring(0, 8));
     }
 
-    public byte[] getZeroPaddedBytes(byte[] source, int length) {
-        byte[] zeroPadded = new byte[length];
-        System.arraycopy(source, 0, zeroPadded, length - source.length, source.length);
-
-        return zeroPadded;
+    private byte[] getParamAddress(String address) {
+         return Utils.getZeroPaddedBytes(Utils.toBytes(Utils.generifyAddress(address)), 32);
     }
 
-    public byte[] getParamAddress(String address) {
-         return getZeroPaddedBytes(Utils.toBytes(Utils.generifyAddress(address)), 32);
-    }
-
-    public byte[] getParamAmount(String amount, UnitProvider unitProvider) {
+    private byte[] getParamAmount(String amount, UnitProvider unitProvider) {
         String amountWeiDecimal = Utils.toWeiString(amount, unitProvider);
-        byte[] source = Utils.toBytes(Utils.toHexStringNo0x(amountWeiDecimal, 10));
-
-
-        return
+        return Utils.getZeroPaddedBytes(Utils.toBytes(Utils.toHexStringNo0x(amountWeiDecimal, 10)), 32);
     }
 
 

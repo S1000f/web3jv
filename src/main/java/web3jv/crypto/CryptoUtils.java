@@ -339,8 +339,8 @@ public class CryptoUtils {
 
         byte[] intVector = iv == null ? Utils.toBytes(Wallet.generateRandomHexStringNo0x(32)) : iv;
         byte[] cipherText = getCiphertextAES256CBC(Cipher.ENCRYPT_MODE, intVector, ecdhPriKey, byteMessage);
+        byte[] dataToMac = Utils.concatBytes(Arrays.asList(intVector, ephemPubKeyBytes, cipherText));
 
-        byte[] dataToMac = buildDataToMac(intVector, ephemPubKeyBytes, cipherText);
         byte[] mac = getCipherTextHmacSHA256(keyForMac, dataToMac);
 
         return new ArrayList<>(Arrays.asList(ephemPubKeyBytes, cipherText, intVector, mac));
@@ -373,7 +373,7 @@ public class CryptoUtils {
         byte[] keyForMac = ecdhResult.get(1);
 
         byte[] ePubKeyByte = Utils.toBytes(theirAddress);
-        byte[] dataToMac = buildDataToMac(iv, ePubKeyByte, cipherText);
+        byte[] dataToMac = Utils.concatBytes(Arrays.asList(iv, ePubKeyByte, cipherText));
 
         byte[] derivedMac = getCipherTextHmacSHA256(keyForMac, dataToMac);
 
@@ -499,28 +499,11 @@ public class CryptoUtils {
         return ecdh;
     }
 
-    private static byte[] buildDataToMac(byte[] iv, byte[] publicKey, byte[] cipherText) {
-        int ivLength = iv.length;
-        int ePubKeyLength = publicKey.length;
-        int cipherTextLength = cipherText.length;
-
-        byte[] dataToMac = new byte[ivLength + ePubKeyLength + cipherTextLength];
-        System.arraycopy(iv, 0, dataToMac, 0, ivLength);
-        System.arraycopy(publicKey, 0, dataToMac, ivLength, ePubKeyLength);
-        System.arraycopy(cipherText, 0, dataToMac, ivLength + ePubKeyLength, cipherTextLength);
-
-        return dataToMac;
-    }
-
     private static byte[] buildEthPrefixMessage(String message) {
         byte[] messageBytes = message.getBytes(StandardCharsets.UTF_8);
         byte[] prefix = ETHEREUM_SPEC.concat(String.valueOf(messageBytes.length)).getBytes();
 
-        byte[] result = new byte[prefix.length + messageBytes.length];
-        System.arraycopy(prefix, 0, result, 0, prefix.length);
-        System.arraycopy(messageBytes, 0, result, prefix.length, messageBytes.length);
-
-        return result;
+        return Utils.concatBytes(Arrays.asList(prefix, messageBytes));
     }
 }
 

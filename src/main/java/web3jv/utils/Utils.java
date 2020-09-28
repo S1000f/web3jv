@@ -107,4 +107,11 @@ public class Utils {
 
         return builder;
     }
+
+    public static byte[] getZeroPaddedBytes(byte[] source, int length) {
+        byte[] zeroPadded = new byte[length];
+        System.arraycopy(source, 0, zeroPadded, length - source.length, source.length);
+
+        return zeroPadded;
+    }
 }
