@@ -47,11 +47,6 @@ public class Web3jv implements Web3jvProvider {
     public Web3jv() {
     }
 
-    public Web3jv(String endpoint) {
-        this.endpoint = endpoint;
-        this.chainId = () -> Optional.ofNullable(netVersion()).orElse("00");
-    }
-
     public Web3jv(String endpoint, ChainIdProvider chainId) {
         this.endpoint = endpoint;
         this.chainId = chainId;
@@ -74,70 +69,85 @@ public class Web3jv implements Web3jvProvider {
         this.chainId = chainId;
     }
 
-    public String netVersion() {
-        try {
-            return templateEmptyParams("net_version");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return null;
+    public String netVersion() throws IOException, JsonRpcErrorException {
+        ResponseInterface result = templateEmptyParams("net_version");
+
+        return Optional.ofNullable(result.getResult())
+                .orElseThrow(() -> new JsonRpcErrorException(result.getError().toString()));
     }
 
-    public String web3ClientVersion() throws IOException {
-        return templateEmptyParams("web3_clientVersion");
+    public String web3ClientVersion() throws IOException, JsonRpcErrorException {
+        ResponseInterface result = templateEmptyParams("web3_clientVersion");
+
+        return Optional.ofNullable(result.getResult())
+                .orElseThrow(() -> new JsonRpcErrorException(result.getError().toString()));
     }
 
-    public BigInteger ethBlockNumber() throws IOException {
-        String result = templateEmptyParams("eth_blockNumber");
-        return new BigInteger(result.substring(2), 16);
+    public BigInteger ethBlockNumber() throws IOException, JsonRpcErrorException {
+        ResponseInterface result = templateEmptyParams("eth_blockNumber");
+
+        return Optional.ofNullable(result.getResult())
+                .map(r -> new BigInteger(r.substring(2), 16))
+                .orElseThrow(() -> new JsonRpcErrorException(result.getError().toString()));
     }
 
-    public BigDecimal ethGetBalance(String address) throws IOException {
-        String result = jsonRpc(new RequestBody(
+    public BigDecimal ethGetBalance(String address) throws IOException, JsonRpcErrorException {
+        ResponseInterface result = jsonRpc(new RequestBody(
                 "2.0",
                 "eth_getBalance",
                 Arrays.asList(address, "latest"),
                 "1"
-        )).getResult();
-        BigInteger bigInteger = new BigInteger(result.substring(2), 16);
+        ));
 
-        return new BigDecimal(bigInteger);
+        return Optional.ofNullable(result.getResult())
+                .map(r -> new BigInteger(r.substring(2), 16))
+                .map(i -> new BigDecimal(i))
+                .orElseThrow(() -> new JsonRpcErrorException(result.getError().toString()));
     }
 
-    public BigInteger ethGetTransactionCount(String addressFrom) throws IOException {
-        String result = jsonRpc(new RequestBody(
+    public BigInteger ethGetTransactionCount(String addressFrom) throws IOException, JsonRpcErrorException {
+        ResponseInterface result = jsonRpc(new RequestBody(
                 "2.0",
                 "eth_getTransactionCount",
                 Arrays.asList(addressFrom, "latest"),
                 "1"
-        )).getResult();
+        ));
 
-        return new BigInteger(result.substring(2), 16);
+        return Optional.ofNullable(result.getResult())
+                .map(r -> new BigInteger(r.substring(2), 16))
+                .orElseThrow(() -> new JsonRpcErrorException(result.getError().toString()));
     }
 
-    public BigInteger ethGasPrice() throws IOException {
-        String result = templateEmptyParams("eth_gasPrice");
-        return new BigInteger(result.substring(2), 16);
+    public BigInteger ethGasPrice() throws IOException, JsonRpcErrorException {
+        ResponseInterface result = templateEmptyParams("eth_gasPrice");
+        return Optional.ofNullable(result.getResult())
+                .map(r -> new BigInteger(r.substring(2), 16))
+                .orElseThrow(() -> new JsonRpcErrorException(result.getError().toString()));
     }
 
-    public BigInteger ethEstimateGas(String addressTo) throws IOException {
-        String result = jsonRpc(new RequestBody(
+    public BigInteger ethEstimateGas(String addressTo) throws IOException, JsonRpcErrorException {
+        ResponseInterface result = jsonRpc(new RequestBody(
                 "2.0",
                 "eth_estimateGas",
                 Collections.singletonList(new Transaction(addressTo)),
                 "1"
-        )).getResult();
+        ));
 
-        return new BigInteger(result.substring(2), 16);
+        return Optional.ofNullable(result.getResult())
+                .map(r -> new BigInteger(r.substring(2), 16))
+                .orElseThrow(() -> new JsonRpcErrorException(result.getError().toString()));
     }
 
-    public String ethSendRawTransaction(String signedHexString0x) throws IOException {
-        return jsonRpc(new RequestBody(
+    public String ethSendRawTransaction(String signedHexString0x) throws IOException, JsonRpcErrorException {
+        ResponseInterface result = jsonRpc(new RequestBody(
                 "2.0",
                 "eth_sendRawTransaction",
                 Collections.singletonList(signedHexString0x),
                 "1"
-        )).getResult();
+        ));
+
+        return Optional.ofNullable(result.getResult())
+                .orElseThrow(() -> new JsonRpcErrorException(result.getError().toString()));
     }
 
     public String ethSendRawTransaction(
@@ -145,13 +155,16 @@ public class Web3jv implements Web3jvProvider {
             String priKey,
             EncoderProvider encoder,
             List<byte[]> additional
-    ) throws IOException {
-        return jsonRpc(new RequestBody(
+    ) throws IOException, JsonRpcErrorException {
+        ResponseInterface result = jsonRpc(new RequestBody(
                 "2.0",
                 "eth_sendRawTransaction",
                 Collections.singletonList(rawTx.signRawTransaction(this, priKey, encoder, additional)),
                 "1"
-        )).getResult();
+        ));
+
+        return Optional.ofNullable(result.getResult())
+                .orElseThrow(() -> new JsonRpcErrorException(result.getError().toString()));
     }
 
     /**
@@ -191,13 +204,13 @@ public class Web3jv implements Web3jvProvider {
         }
     }
 
-    private String templateEmptyParams(String method) throws IOException {
+    private ResponseInterface templateEmptyParams(String method) throws IOException {
         return jsonRpc(new RequestBody(
                 "2.0",
                 method,
                 Collections.emptyList(),
                 "1"
-        )).getResult();
+        ));
     }
 
     @Override

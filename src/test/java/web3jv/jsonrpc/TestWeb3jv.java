@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  * <p>인퓨라를 통해 이더리움 네트워크와 통신하는 테스트 이므로 엔드포인트의 상태에 따라
@@ -41,7 +42,7 @@ public class TestWeb3jv {
 
     @DisplayName("인퓨라 엔드포인트 입력시 geth 클라이언트의 특정 버전이 반환된다")
     @Test
-    public void web3jClientVersionTest() throws IOException {
+    public void web3jClientVersionTest() throws IOException, JsonRpcErrorException {
         web3jv.setEndpoint(
                 "https://ropsten.infura.io/v3/ff7a2a6b2e054541a1b4bffe4c58bd11",
                 DefaultChainId.ROPSTEN
@@ -51,17 +52,37 @@ public class TestWeb3jv {
         assertEquals("Geth/v1.9.9-omnibus-e320ae4c-20191206/linux-amd64/go1.13.4", result);
     }
 
+    @DisplayName("gasLimit 값을 수신한다")
     @Test
-    public void getGasLimitTest() throws IOException {
+    public void getGasLimitTest() throws IOException, JsonRpcErrorException {
         BigInteger result = web3jv.ethEstimateGas(sampleAddressFrom);
         assertEquals(new BigInteger("21000"), result);
+    }
+
+    @DisplayName("올바르지 않은 주소 입력시 ethEstimateGas 가 실패하고 익셉션이 발생한다")
+    @Test
+    public void jsonRpcExceptionTest() {
+        assertThrows(JsonRpcErrorException.class, () -> web3jv.ethEstimateGas("0x12341234"));
+    }
+
+    @DisplayName("json-rpc 실패 시 JsonRpcErrorException 발생한다")
+    @Test
+    public void errorCodeAndMessageTest() {
+        String wrongSignedTx = "0xanswer to life the universe and everything is 42";
+        try {
+            web3jv.ethSendRawTransaction(wrongSignedTx);
+        } catch (JsonRpcErrorException | IOException e) {
+            System.out.println(e);
+        }
+
+        assertThrows(JsonRpcErrorException.class, () -> web3jv.ethSendRawTransaction(wrongSignedTx));
     }
 
     @Disabled(value = "처음 테스트 실행시 트랜젝션이 블록에 생성중인 상태(pending)일 경우, " +
             "테스트 재실행 시 이전 테스트의 트랜젝션과 같은 논스를 가진 트랜젝션이 생성되므로 테스트가 실패할 수 있다")
     @DisplayName("트랜젝션 해시값이 올바르게 만들어진다")
     @Test
-    public void ethSendRawTransactionTest() throws IOException {
+    public void ethSendRawTransactionTest() throws IOException, JsonRpcErrorException {
         Transaction transaction = getSampleTransaction();
         String signedTx = transaction.signRawTransaction(web3jv, samplePriKey, encoder, null);
 
@@ -71,7 +92,7 @@ public class TestWeb3jv {
         assertEquals(result, txHash);
     }
 
-    private Transaction getSampleTransaction() throws IOException {
+    private Transaction getSampleTransaction() throws IOException, JsonRpcErrorException {
         return Transaction.builder()
                 .nonce(web3jv.ethGetTransactionCount(sampleAddressFrom))
                 .gasPrice(web3jv.ethGasPrice())

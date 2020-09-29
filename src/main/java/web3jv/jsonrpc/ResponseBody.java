@@ -1,17 +1,22 @@
 package web3jv.jsonrpc;
 
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+
+import java.util.Map;
+
 public class ResponseBody implements ResponseInterface {
 
     private int id;
     private String jsonrpc;
     private String result;
-    private String error;
+    @JsonAnySetter
+    private Map<String, String> error;
 
-    public String getError() {
+    public Map<String, String> getError() {
         return error;
     }
 
-    public void setError(String error) {
+    public void setError(Map<String, String> error) {
         this.error = error;
     }
 
