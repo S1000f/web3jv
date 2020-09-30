@@ -68,8 +68,7 @@ public class Wallet {
 
     public static boolean checkAddressEIP55(String address) {
         String target = address.startsWith("0x") ? address.substring(2) : address;
-        String lower = target.toLowerCase();
-        char[] checksum = getKeccack256HexString(lower.getBytes()).toCharArray();
+        char[] checksum = getKeccack256HexString(Utils.generifyAddress(address).getBytes()).toCharArray();
         char[] subject = target.toCharArray();
         for (int i = 0; i < target.length(); i++) {
             if (Character.isUpperCase(subject[i]) && checksum[i] < 56) {
@@ -82,8 +81,7 @@ public class Wallet {
 
     public static String encodeEIP55(String address) {
         String target = address.startsWith("0x") ? address.substring(2) : address;
-        String lower = target.toLowerCase();
-        String addressHash = getKeccack256HexString(lower.getBytes());
+        String addressHash = getKeccack256HexString(Utils.generifyAddress(address).getBytes());
         char[] subject = target.toCharArray();
         char[] checksum = addressHash.toCharArray();
         for (int i = 0; i < subject.length; i++) {

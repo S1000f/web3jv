@@ -1,5 +1,6 @@
 package web3jv.wallet;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import web3jv.utils.Utils;
 
 /**
@@ -18,6 +19,11 @@ public class WalletFile {
     private Crypto crypto;
     private String id;
     private int version;
+
+    @JsonIgnore
+    public String getAddressNo0x() {
+        return address.startsWith("0x") ? address.substring(2) : address;
+    }
 
     public String getAddress() {
         return address;

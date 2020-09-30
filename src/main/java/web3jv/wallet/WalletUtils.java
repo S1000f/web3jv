@@ -135,23 +135,6 @@ public class WalletUtils {
      * 파일의 저장은 별도의 메소드로 수행하여야 한다.</p>
      * 파일명 형식:
      * <pre>
-     *     UTC--yyyy-MM-ddTHH-mm-ss.nVV--입력한주소.json
-     * </pre>
-     * @param walletFile 생성할 키스토어 이름에 추가될 주소가 담긴 객체
-     * @return 키스토어 이름. 입력한 주소가 같더라도 이름은 매 나노초 마다 바뀌므로 유의한다.
-     * @see WalletUtils#saveKeystore(WalletFile)
-     * @since 0.1.0
-     */
-    public static <T extends WalletFile> String generateKeystoreName(T walletFile) {
-        DateTimeFormatter format = DateTimeFormatter.ofPattern("'UTC--'yyyy-MM-dd'T'HH-mm-ss.nVV'--'");
-        return ZonedDateTime.now(ZoneOffset.UTC).format(format) + walletFile.getAddress() + ".json";
-    }
-
-    /**
-     * <p>키스토어 파일의 이름을 생성한다. 이름만 생성하여 반환하며,
-     * 파일의 저장은 별도의 메소드로 수행하여야 한다.</p>
-     * 파일명 형식:
-     * <pre>
      *      UTC--yyyy-MM-ddTHH-mm-ss.nVV--입력한주소.json
      * </pre>
      * @param address '0x' 없는 주소
@@ -162,9 +145,23 @@ public class WalletUtils {
      */
     public static String generateKeystoreName(String address) {
         DateTimeFormatter format = DateTimeFormatter.ofPattern("'UTC--'yyyy-MM-dd'T'HH-mm-ss.nVV'--'");
-        return ZonedDateTime.now(ZoneOffset.UTC).format(format) +
-                (address.startsWith("0x") ? address.substring(2) : address) +
-                ".json";
+        return ZonedDateTime.now(ZoneOffset.UTC).format(format) + address + ".json";
+    }
+
+    /**
+     * <p>키스토어 파일의 이름을 생성한다. 이름만 생성하여 반환하며,
+     * 파일의 저장은 별도의 메소드로 수행하여야 한다.</p>
+     * 파일명 형식:
+     * <pre>
+     *     UTC--yyyy-MM-ddTHH-mm-ss.nVV--입력한주소.json
+     * </pre>
+     * @param walletFile 생성할 키스토어 이름에 추가될 주소가 담긴 객체
+     * @return 키스토어 이름. 입력한 주소가 같더라도 이름은 매 나노초 마다 바뀌므로 유의한다.
+     * @see WalletUtils#saveKeystore(WalletFile)
+     * @since 0.1.0
+     */
+    public static <T extends WalletFile> String generateKeystoreName(T walletFile) {
+        return generateKeystoreName(walletFile.getAddressNo0x());
     }
 
 }

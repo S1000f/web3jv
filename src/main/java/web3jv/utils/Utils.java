@@ -38,7 +38,7 @@ public class Utils {
         BigDecimal converted = new BigDecimal(amount);
         return fromWeiString(converted, targetUnit);
     }
-
+    
     public static BigDecimal toWeiBigDecimal(BigDecimal amount, UnitProvider originUnit) {
         BigDecimal position = new BigDecimal("10").pow(originUnit.getWeiValue());
         amount = amount.multiply(position).stripTrailingZeros();
