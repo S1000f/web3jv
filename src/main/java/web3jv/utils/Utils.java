@@ -9,6 +9,7 @@ import java.math.RoundingMode;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.function.IntSupplier;
 
 /**
  * <p>단위변환, 타입 변환 등의 공용 유틸리티의 모음. 전역 메소드로만 구성됨.</p>
@@ -23,40 +24,40 @@ public class Utils {
     * */
     private Utils() {}
 
-    public static BigDecimal fromWeiBigDecimal(BigDecimal amount, UnitProvider targetUnit) {
-        BigDecimal position = new BigDecimal("10").pow(targetUnit.getWeiValue());
-        amount = amount.divide(position, targetUnit.getWeiValue(), RoundingMode.CEILING);
+    public static BigDecimal fromWeiBigDecimal(BigDecimal amount, IntSupplier targetUnit) {
+        BigDecimal position = new BigDecimal("10").pow(targetUnit.getAsInt());
+        amount = amount.divide(position, targetUnit.getAsInt(), RoundingMode.CEILING);
 
         return amount;
     }
 
-    public static String fromWeiString(BigDecimal amount, UnitProvider targetUnit) {
+    public static String fromWeiString(BigDecimal amount, IntSupplier targetUnit) {
         return fromWeiBigDecimal(amount, targetUnit).toString();
     }
 
-    public static String fromWeiString(String amount, UnitProvider targetUnit) {
+    public static String fromWeiString(String amount, IntSupplier targetUnit) {
         BigDecimal converted = new BigDecimal(amount);
         return fromWeiString(converted, targetUnit);
     }
     
-    public static BigDecimal toWeiBigDecimal(BigDecimal amount, UnitProvider originUnit) {
-        BigDecimal position = new BigDecimal("10").pow(originUnit.getWeiValue());
+    public static BigDecimal toWeiBigDecimal(BigDecimal amount, IntSupplier originUnit) {
+        BigDecimal position = new BigDecimal("10").pow(originUnit.getAsInt());
         amount = amount.multiply(position).stripTrailingZeros();
 
         return amount;
     }
 
-    public static BigDecimal toWeiBigDecimal(String amount, UnitProvider originUnit) {
+    public static BigDecimal toWeiBigDecimal(String amount, IntSupplier originUnit) {
         BigDecimal converted = new BigDecimal(amount);
         return toWeiBigDecimal(converted, originUnit);
     }
 
-    public static String toWeiString(BigDecimal amount, UnitProvider originUnit) {
+    public static String toWeiString(BigDecimal amount, IntSupplier originUnit) {
         BigDecimal result = toWeiBigDecimal(amount, originUnit);
         return result.toPlainString();
     }
 
-    public static String toWeiString(String amount, UnitProvider originUnit) {
+    public static String toWeiString(String amount, IntSupplier originUnit) {
         BigDecimal converted = new BigDecimal(amount);
         return toWeiString(converted, originUnit);
     }

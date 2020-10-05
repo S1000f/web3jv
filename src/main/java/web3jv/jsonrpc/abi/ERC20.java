@@ -1,12 +1,12 @@
 package web3jv.jsonrpc.abi;
 
 import web3jv.crypto.CryptoUtils;
-import web3jv.utils.UnitProvider;
 import web3jv.utils.Utils;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.IntSupplier;
 
 public class ERC20 implements ABI {
 
@@ -21,7 +21,7 @@ public class ERC20 implements ABI {
         return "0x" + Utils.toHexStringNo0x(txDataByte);
     }
 
-    public String getTxDataTransfer(String addressTo, String amount, UnitProvider originUnit) {
+    public String getTxDataTransfer(String addressTo, String amount, IntSupplier originUnit) {
         byte[] func = functionSelector("transfer", Arrays.asList("address", "uint256"));
         byte[] addressByte = getParamAddress(addressTo);
         byte[] amountByte = getParamAmount(amount, originUnit);
@@ -49,7 +49,7 @@ public class ERC20 implements ABI {
          return Utils.getZeroPaddedBytes(Utils.toBytes(Utils.generifyAddress(address)), 32);
     }
 
-    private byte[] getParamAmount(String amount, UnitProvider unitProvider) {
+    private byte[] getParamAmount(String amount, IntSupplier unitProvider) {
         String amountWeiDecimal = Utils.toWeiString(amount, unitProvider);
         return Utils.getZeroPaddedBytes(Utils.toBytes(Utils.toHexStringNo0x(amountWeiDecimal, 10)), 32);
     }
