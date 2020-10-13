@@ -73,6 +73,8 @@ public class Wallet {
         for (int i = 0; i < target.length(); i++) {
             if (Character.isUpperCase(subject[i]) && checksum[i] < 56) {
                 return false;
+            } else if (Character.isLowerCase(subject[i]) && checksum[i] >= 56) {
+                return false;
             }
         }
 
